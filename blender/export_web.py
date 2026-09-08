@@ -262,6 +262,10 @@ def main():
     if os.path.abspath(bpy.data.filepath) != source:
         raise RuntimeError(f"Loaded blend does not match --source: {bpy.data.filepath}")
     loaded_hash = source_hash(source)
+    # Interior rebuilds can leave thousands of unlinked mesh datablocks.
+    # Purge only those orphans in this disposable process: join() otherwise
+    # scans every stale ID for each mesh. The authored source is never saved.
+    bpy.data.orphans_purge(do_local_ids=True, do_linked_ids=False, do_recursive=True)
     from station_lighting import validate_surface_maps
     validate_surface_maps()
     source_scene = bpy.context.scene

@@ -29,8 +29,9 @@ floor.receiveShadow = true;
 const camera = new THREE.PerspectiveCamera(42, innerWidth / Math.max(1, innerHeight), .1, 2000);
 const controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.dampingFactor = .075;
 controls.screenSpacePanning = true; controls.minDistance = 1; controls.maxDistance = 1000; controls.maxPolarAngle = Math.PI * .49;
-const buttons = [...document.querySelectorAll("[data-view]")]; const names = { threequarter: "TRES CUARTOS", front: "FRENTE", coupler: "ENGANCHE", roof: "TECHO DE CABINA", cab: "VENTANA DE CABINA", doors: "PUERTAS", side: "LATERAL", rear: "TRASERA", full: "TREN COMPLETO", saloon: 'SALÓN', seats: 'ASIENTOS', operator: 'PUESTO DEL OPERADOR', 'cab-seat': 'ASIENTO DEL OPERADOR' };
+const buttons = [...document.querySelectorAll("[data-view]")]; const names = { threequarter: "TRES CUARTOS", front: "FRENTE", coupler: "ENGANCHE", roof: "TECHO DE CABINA", cab: "VENTANA DE CABINA", doors: "PUERTAS", side: "LATERAL", rear: "TRASERA", full: "TREN COMPLETO", saloon: 'SALÓN', seats: 'ASIENTOS', 'saloon-doors': 'PUERTAS DEL SALÓN', operator: 'PUESTO DEL OPERADOR', 'cab-seat': 'ASIENTO DEL OPERADOR' };
 let bounds, frontDoorZ = -.73, activeView = 'threequarter';
+const interiorViews = new Set(['saloon','seats','saloon-doors','operator','cab-seat']);
 let doors, interior, cabInstruments, lastTime = performance.now(), lastRevision = -1, needsRender = true;
 const carSelect=document.querySelector('#review-car');
 carSelect.value=String(Math.max(1,Math.min(7,Number(new URLSearchParams(location.search).get('car'))||1)));
@@ -56,7 +57,7 @@ function frame(view) {
   controls.enableDamping = false; controls.update();
   const c = bounds.getCenter(new THREE.Vector3()); const s = bounds.getSize(new THREE.Vector3());
   const length = Math.max(s.x, s.z); const height = Math.max(2, s.y); const side = Math.max(4, Math.min(24, length * .22)); let position;
-  const inside=['saloon','seats','operator','cab-seat'].includes(view);
+  const inside=interiorViews.has(view);
   let carIndex=Number(carSelect.value);
   if(['operator','cab-seat'].includes(view)) {carIndex=carIndex>4?7:1;carSelect.value=String(carIndex);}
   const car=interior?.cars[carIndex-1];
@@ -70,6 +71,11 @@ function frame(view) {
     const at=(x,y,u)=>new THREE.Vector3(x*car.direction,y,car.center+car.direction*u);
     if(view==='operator') {position=at(.40,2.70,8.45);controls.target.copy(at(0,2.13,9.88));}
     else if(view==='cab-seat') {position=at(.64,2.55,9.55);controls.target.copy(at(0,1.94,8.72));}
+    else if(view==='saloon-doors') {
+      const u=window.__metroReview.manifest.train.doors.centresLocalMetres[`CAF car ${String(carIndex).padStart(2,'0')}`].at(-1);
+      position=at(-.48,2.40,u-.32);controls.target.copy(at(1.35,2.47,u));
+      doorState.doorSide=car.direction;sideSelect.value=String(car.direction);
+    }
     else if(view==='seats') {position=at(-.30,2.25,5.1);controls.target.copy(at(.98,1.97,4.2));}
     else {position=at(.22,2.57,6.63);controls.target.copy(at(.22,2.53,-3));}
   }
@@ -98,7 +104,7 @@ function frame(view) {
     camera.setViewOffset(innerWidth,innerHeight,0,innerHeight*.12,innerWidth,innerHeight);
   } else camera.clearViewOffset();
   camera.position.copy(position); controls.update(); controls.enableDamping = true; buttons.forEach((b) => b.classList.toggle("active", b.dataset.view === view)); status.textContent = `${names[view]} · BLENDER GLB`;
-  interior?.update(0,false,camera.position.z);needsRender=true;
+  interior?.update(0,false,camera.position.z,inside);needsRender=true;
   const entry=document.querySelector('.interior-link');
   entry.href=['operator','cab-seat'].includes(view)?'/?view=operator':'/?view=interior';
   entry.textContent=['operator','cab-seat'].includes(view)?'ABRIR SERVICIO EN CABINA →':'ENTRAR AL INTERIOR →';
@@ -137,6 +143,7 @@ function render(now = performance.now()) {
   }
   controls.update();
   if (!document.hidden && (needsRender || lastRevision !== doors?.revision)) {
+    interior?.update(0,false,camera.position.z,interiorViews.has(activeView));
     renderer.render(scene, camera); needsRender = false; lastRevision = doors?.revision;
   }
   requestAnimationFrame(render);

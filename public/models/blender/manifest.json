@@ -2,7 +2,7 @@
   "schema": "metro-blender-web-export/1",
   "source": {
     "file": "metro_caracas_line1.blend",
-    "sha256": "09763bd2056b145d94362d6228bc6c3d23ca81c98b9d00e3ef02af6aad54d245"
+    "sha256": "223b9281727e414b4954f40c888d6a653cff88a9d98e2b4535c36a642d5d3344"
   },
   "coordinateSystem": {
     "up": "Y",
@@ -281,8 +281,8 @@
   "assets": {
     "train": {
       "path": "models/blender/train.glb",
-      "meshes": 11778,
-      "triangles": 2623612,
+      "meshes": 11842,
+      "triangles": 2795756,
       "bounds": {
         "min": [
           -1.55385,
@@ -449,147 +449,147 @@
           }
         },
         "CAF interior 01": {
-          "meshes": 1062,
-          "triangles": 164438,
+          "meshes": 1074,
+          "triangles": 189150,
           "bounds": {
             "min": [
-              -1.49,
+              -1.50295,
               0.83,
               -18.211
             ],
             "max": [
-              1.49,
+              1.50295,
               3.7925,
               2.80591
             ],
             "size": [
-              2.98,
+              3.0059,
               2.9625,
               21.01691
             ]
           }
         },
         "CAF interior 02": {
-          "meshes": 922,
-          "triangles": 166246,
+          "meshes": 930,
+          "triangles": 190790,
           "bounds": {
             "min": [
-              -1.45193,
+              -1.50295,
               1.026,
               -39.171
             ],
             "max": [
-              1.45193,
-              3.4,
+              1.50295,
+              3.40321,
               -18.209
             ],
             "size": [
-              2.90387,
-              2.374,
+              3.0059,
+              2.37721,
               20.962
             ]
           }
         },
         "CAF interior 03": {
-          "meshes": 922,
-          "triangles": 166246,
+          "meshes": 930,
+          "triangles": 190790,
           "bounds": {
             "min": [
-              -1.45193,
+              -1.50295,
               1.026,
               -60.131
             ],
             "max": [
-              1.45193,
-              3.4,
+              1.50295,
+              3.40321,
               -39.169
             ],
             "size": [
-              2.90387,
-              2.374,
+              3.0059,
+              2.37721,
               20.96199
             ]
           }
         },
         "CAF interior 04": {
-          "meshes": 922,
-          "triangles": 166246,
+          "meshes": 930,
+          "triangles": 190790,
           "bounds": {
             "min": [
-              -1.45193,
+              -1.50295,
               1.026,
               -81.091
             ],
             "max": [
-              1.45193,
-              3.4,
+              1.50295,
+              3.40321,
               -60.129
             ],
             "size": [
-              2.90387,
-              2.374,
+              3.0059,
+              2.37721,
               20.96199
             ]
           }
         },
         "CAF interior 05": {
-          "meshes": 922,
-          "triangles": 166246,
+          "meshes": 930,
+          "triangles": 190790,
           "bounds": {
             "min": [
-              -1.45193,
+              -1.50295,
               1.026,
               -102.05099
             ],
             "max": [
-              1.45193,
-              3.4,
+              1.50295,
+              3.40321,
               -81.089
             ],
             "size": [
-              2.90387,
-              2.374,
+              3.0059,
+              2.37721,
               20.96199
             ]
           }
         },
         "CAF interior 06": {
-          "meshes": 922,
-          "triangles": 166246,
+          "meshes": 930,
+          "triangles": 190790,
           "bounds": {
             "min": [
-              -1.45193,
+              -1.50295,
               1.026,
               -123.011
             ],
             "max": [
-              1.45193,
-              3.4,
+              1.50295,
+              3.40321,
               -102.049
             ],
             "size": [
-              2.90387,
-              2.374,
+              3.0059,
+              2.37721,
               20.962
             ]
           }
         },
         "CAF interior 07": {
-          "meshes": 1062,
-          "triangles": 164438,
+          "meshes": 1074,
+          "triangles": 189150,
           "bounds": {
             "min": [
-              -1.49,
+              -1.50295,
               0.83,
               -144.02591
             ],
             "max": [
-              1.49,
+              1.50295,
               3.7925,
               -123.009
             ],
             "size": [
-              2.98,
+              3.0059,
               2.9625,
               21.01691
             ]
@@ -25059,87 +25059,6 @@
     ],
     "trainAreaLights": [
       {
-        "name": "CAF interior ceiling area wash",
-        "collection": "CAF interior 01",
-        "position": [
-          0.0,
-          3.2899999618530273,
-          -13.729999542236328
-        ],
-        "quaternion": [
-          -0.7071067690849304,
-          0.0,
-          0.0,
-          0.7071067690849304
-        ],
-        "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
-        ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash",
-        "family": "train interior",
-        "tone": "fluorescent",
-        "basis": "Native train interior source"
-      },
-      {
-        "name": "CAF interior ceiling area wash.001",
-        "collection": "CAF interior 01",
-        "position": [
-          0.0,
-          3.2899999618530273,
-          -7.730000019073486
-        ],
-        "quaternion": [
-          -0.7071067690849304,
-          0.0,
-          0.0,
-          0.7071067690849304
-        ],
-        "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
-        ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.001",
-        "family": "train interior",
-        "tone": "fluorescent",
-        "basis": "Native train interior source"
-      },
-      {
-        "name": "CAF interior ceiling area wash.002",
-        "collection": "CAF interior 01",
-        "position": [
-          0.0,
-          3.2899999618530273,
-          -1.7300000190734863
-        ],
-        "quaternion": [
-          -0.7071067690849304,
-          0.0,
-          0.0,
-          0.7071067690849304
-        ],
-        "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
-        ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.002",
-        "family": "train interior",
-        "tone": "fluorescent",
-        "basis": "Native train interior source"
-      },
-      {
         "name": "CAF cab warm ceiling source",
         "collection": "CAF interior 01",
         "position": [
@@ -25167,12 +25086,12 @@
         "basis": "Native train interior source"
       },
       {
-        "name": "CAF interior ceiling area wash.003",
-        "collection": "CAF interior 02",
+        "name": "CAF interior strip area source",
+        "collection": "CAF interior 01",
         "position": [
-          0.0,
-          3.2899999618530273,
-          -34.689998626708984
+          -0.8299999833106995,
+          3.236999988555908,
+          -8.789999961853027
         ],
         "quaternion": [
           -0.7071067690849304,
@@ -25181,24 +25100,51 @@
           0.7071067690849304
         ],
         "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
         ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.003",
-        "family": "train interior",
+        "power": 55.0,
+        "width": 0.25,
+        "height": 18.219999313354492,
+        "fixtureId": "CAF interior 01:saloon-strip:-1",
+        "family": "saloon opal strip",
         "tone": "fluorescent",
-        "basis": "Native train interior source"
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
       },
       {
-        "name": "CAF interior ceiling area wash.004",
+        "name": "CAF interior strip area source.001",
+        "collection": "CAF interior 01",
+        "position": [
+          0.8299999833106995,
+          3.236999988555908,
+          -8.789999961853027
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
+        ],
+        "power": 55.0,
+        "width": 0.25,
+        "height": 18.219999313354492,
+        "fixtureId": "CAF interior 01:saloon-strip:1",
+        "family": "saloon opal strip",
+        "tone": "fluorescent",
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
+      },
+      {
+        "name": "CAF interior strip area source.002",
         "collection": "CAF interior 02",
         "position": [
-          0.0,
-          3.2899999618530273,
+          -0.8299999833106995,
+          3.236999988555908,
           -28.690000534057617
         ],
         "quaternion": [
@@ -25208,25 +25154,25 @@
           0.7071067690849304
         ],
         "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
         ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.004",
-        "family": "train interior",
+        "power": 55.0,
+        "width": 0.25,
+        "height": 20.34000015258789,
+        "fixtureId": "CAF interior 02:saloon-strip:-1",
+        "family": "saloon opal strip",
         "tone": "fluorescent",
-        "basis": "Native train interior source"
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
       },
       {
-        "name": "CAF interior ceiling area wash.005",
+        "name": "CAF interior strip area source.003",
         "collection": "CAF interior 02",
         "position": [
-          0.0,
-          3.2899999618530273,
-          -22.690000534057617
+          0.8299999833106995,
+          3.236999988555908,
+          -28.690000534057617
         ],
         "quaternion": [
           -0.7071067690849304,
@@ -25235,51 +25181,24 @@
           0.7071067690849304
         ],
         "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
         ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.005",
-        "family": "train interior",
+        "power": 55.0,
+        "width": 0.25,
+        "height": 20.34000015258789,
+        "fixtureId": "CAF interior 02:saloon-strip:1",
+        "family": "saloon opal strip",
         "tone": "fluorescent",
-        "basis": "Native train interior source"
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
       },
       {
-        "name": "CAF interior ceiling area wash.006",
+        "name": "CAF interior strip area source.004",
         "collection": "CAF interior 03",
         "position": [
-          0.0,
-          3.2899999618530273,
-          -55.650001525878906
-        ],
-        "quaternion": [
-          -0.7071067690849304,
-          0.0,
-          0.0,
-          0.7071067690849304
-        ],
-        "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
-        ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.006",
-        "family": "train interior",
-        "tone": "fluorescent",
-        "basis": "Native train interior source"
-      },
-      {
-        "name": "CAF interior ceiling area wash.007",
-        "collection": "CAF interior 03",
-        "position": [
-          0.0,
-          3.2899999618530273,
+          -0.8299999833106995,
+          3.236999988555908,
           -49.650001525878906
         ],
         "quaternion": [
@@ -25289,25 +25208,25 @@
           0.7071067690849304
         ],
         "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
         ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.007",
-        "family": "train interior",
+        "power": 55.0,
+        "width": 0.25,
+        "height": 20.34000015258789,
+        "fixtureId": "CAF interior 03:saloon-strip:-1",
+        "family": "saloon opal strip",
         "tone": "fluorescent",
-        "basis": "Native train interior source"
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
       },
       {
-        "name": "CAF interior ceiling area wash.008",
+        "name": "CAF interior strip area source.005",
         "collection": "CAF interior 03",
         "position": [
-          0.0,
-          3.2899999618530273,
-          -43.650001525878906
+          0.8299999833106995,
+          3.236999988555908,
+          -49.650001525878906
         ],
         "quaternion": [
           -0.7071067690849304,
@@ -25316,51 +25235,24 @@
           0.7071067690849304
         ],
         "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
         ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.008",
-        "family": "train interior",
+        "power": 55.0,
+        "width": 0.25,
+        "height": 20.34000015258789,
+        "fixtureId": "CAF interior 03:saloon-strip:1",
+        "family": "saloon opal strip",
         "tone": "fluorescent",
-        "basis": "Native train interior source"
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
       },
       {
-        "name": "CAF interior ceiling area wash.009",
+        "name": "CAF interior strip area source.006",
         "collection": "CAF interior 04",
         "position": [
-          0.0,
-          3.2899999618530273,
-          -76.61000061035156
-        ],
-        "quaternion": [
-          -0.7071067690849304,
-          0.0,
-          0.0,
-          0.7071067690849304
-        ],
-        "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
-        ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.009",
-        "family": "train interior",
-        "tone": "fluorescent",
-        "basis": "Native train interior source"
-      },
-      {
-        "name": "CAF interior ceiling area wash.010",
-        "collection": "CAF interior 04",
-        "position": [
-          0.0,
-          3.2899999618530273,
+          -0.8299999833106995,
+          3.236999988555908,
           -70.61000061035156
         ],
         "quaternion": [
@@ -25370,25 +25262,25 @@
           0.7071067690849304
         ],
         "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
         ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.010",
-        "family": "train interior",
+        "power": 55.0,
+        "width": 0.25,
+        "height": 20.34000015258789,
+        "fixtureId": "CAF interior 04:saloon-strip:-1",
+        "family": "saloon opal strip",
         "tone": "fluorescent",
-        "basis": "Native train interior source"
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
       },
       {
-        "name": "CAF interior ceiling area wash.011",
+        "name": "CAF interior strip area source.007",
         "collection": "CAF interior 04",
         "position": [
-          0.0,
-          3.2899999618530273,
-          -64.61000061035156
+          0.8299999833106995,
+          3.236999988555908,
+          -70.61000061035156
         ],
         "quaternion": [
           -0.7071067690849304,
@@ -25397,51 +25289,24 @@
           0.7071067690849304
         ],
         "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
         ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.011",
-        "family": "train interior",
+        "power": 55.0,
+        "width": 0.25,
+        "height": 20.34000015258789,
+        "fixtureId": "CAF interior 04:saloon-strip:1",
+        "family": "saloon opal strip",
         "tone": "fluorescent",
-        "basis": "Native train interior source"
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
       },
       {
-        "name": "CAF interior ceiling area wash.012",
+        "name": "CAF interior strip area source.008",
         "collection": "CAF interior 05",
         "position": [
-          0.0,
-          3.2899999618530273,
-          -97.56999969482422
-        ],
-        "quaternion": [
-          -0.7071067690849304,
-          0.0,
-          0.0,
-          0.7071067690849304
-        ],
-        "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
-        ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.012",
-        "family": "train interior",
-        "tone": "fluorescent",
-        "basis": "Native train interior source"
-      },
-      {
-        "name": "CAF interior ceiling area wash.013",
-        "collection": "CAF interior 05",
-        "position": [
-          0.0,
-          3.2899999618530273,
+          -0.8299999833106995,
+          3.236999988555908,
           -91.56999969482422
         ],
         "quaternion": [
@@ -25451,25 +25316,25 @@
           0.7071067690849304
         ],
         "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
         ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.013",
-        "family": "train interior",
+        "power": 55.0,
+        "width": 0.25,
+        "height": 20.34000015258789,
+        "fixtureId": "CAF interior 05:saloon-strip:-1",
+        "family": "saloon opal strip",
         "tone": "fluorescent",
-        "basis": "Native train interior source"
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
       },
       {
-        "name": "CAF interior ceiling area wash.014",
+        "name": "CAF interior strip area source.009",
         "collection": "CAF interior 05",
         "position": [
-          0.0,
-          3.2899999618530273,
-          -85.56999969482422
+          0.8299999833106995,
+          3.236999988555908,
+          -91.56999969482422
         ],
         "quaternion": [
           -0.7071067690849304,
@@ -25478,51 +25343,24 @@
           0.7071067690849304
         ],
         "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
         ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.014",
-        "family": "train interior",
+        "power": 55.0,
+        "width": 0.25,
+        "height": 20.34000015258789,
+        "fixtureId": "CAF interior 05:saloon-strip:1",
+        "family": "saloon opal strip",
         "tone": "fluorescent",
-        "basis": "Native train interior source"
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
       },
       {
-        "name": "CAF interior ceiling area wash.015",
+        "name": "CAF interior strip area source.010",
         "collection": "CAF interior 06",
         "position": [
-          0.0,
-          3.2899999618530273,
-          -118.52999877929688
-        ],
-        "quaternion": [
-          -0.7071067690849304,
-          0.0,
-          0.0,
-          0.7071067690849304
-        ],
-        "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
-        ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.015",
-        "family": "train interior",
-        "tone": "fluorescent",
-        "basis": "Native train interior source"
-      },
-      {
-        "name": "CAF interior ceiling area wash.016",
-        "collection": "CAF interior 06",
-        "position": [
-          0.0,
-          3.2899999618530273,
+          -0.8299999833106995,
+          3.236999988555908,
           -112.52999877929688
         ],
         "quaternion": [
@@ -25532,25 +25370,25 @@
           0.7071067690849304
         ],
         "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
         ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.016",
-        "family": "train interior",
+        "power": 55.0,
+        "width": 0.25,
+        "height": 20.34000015258789,
+        "fixtureId": "CAF interior 06:saloon-strip:-1",
+        "family": "saloon opal strip",
         "tone": "fluorescent",
-        "basis": "Native train interior source"
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
       },
       {
-        "name": "CAF interior ceiling area wash.017",
+        "name": "CAF interior strip area source.011",
         "collection": "CAF interior 06",
         "position": [
-          0.0,
-          3.2899999618530273,
-          -106.52999877929688
+          0.8299999833106995,
+          3.236999988555908,
+          -112.52999877929688
         ],
         "quaternion": [
           -0.7071067690849304,
@@ -25559,98 +25397,17 @@
           0.7071067690849304
         ],
         "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
         ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.017",
-        "family": "train interior",
+        "power": 55.0,
+        "width": 0.25,
+        "height": 20.34000015258789,
+        "fixtureId": "CAF interior 06:saloon-strip:1",
+        "family": "saloon opal strip",
         "tone": "fluorescent",
-        "basis": "Native train interior source"
-      },
-      {
-        "name": "CAF interior ceiling area wash.018",
-        "collection": "CAF interior 07",
-        "position": [
-          0.0,
-          3.2899999618530273,
-          -127.48999786376953
-        ],
-        "quaternion": [
-          -0.7071067690849304,
-          0.0,
-          0.0,
-          0.7071067690849304
-        ],
-        "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
-        ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.018",
-        "family": "train interior",
-        "tone": "fluorescent",
-        "basis": "Native train interior source"
-      },
-      {
-        "name": "CAF interior ceiling area wash.019",
-        "collection": "CAF interior 07",
-        "position": [
-          0.0,
-          3.2899999618530273,
-          -133.49000549316406
-        ],
-        "quaternion": [
-          -0.7071067690849304,
-          0.0,
-          0.0,
-          0.7071067690849304
-        ],
-        "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
-        ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.019",
-        "family": "train interior",
-        "tone": "fluorescent",
-        "basis": "Native train interior source"
-      },
-      {
-        "name": "CAF interior ceiling area wash.020",
-        "collection": "CAF interior 07",
-        "position": [
-          0.0,
-          3.2899999618530273,
-          -139.49000549316406
-        ],
-        "quaternion": [
-          -0.7071067690849304,
-          0.0,
-          0.0,
-          0.7071067690849304
-        ],
-        "color": [
-          0.9399999976158142,
-          0.9599999785423279,
-          1.0
-        ],
-        "power": 50.0,
-        "width": 1.7999999523162842,
-        "height": 4.699999809265137,
-        "fixtureId": "CAF interior ceiling area wash.020",
-        "family": "train interior",
-        "tone": "fluorescent",
-        "basis": "Native train interior source"
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
       },
       {
         "name": "CAF cab warm ceiling source.001",
@@ -25678,6 +25435,60 @@
         "family": "train interior",
         "tone": "fluorescent",
         "basis": "Native train interior source"
+      },
+      {
+        "name": "CAF interior strip area source.012",
+        "collection": "CAF interior 07",
+        "position": [
+          -0.8299999833106995,
+          3.236999988555908,
+          -132.42999267578125
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
+        ],
+        "power": 55.0,
+        "width": 0.25,
+        "height": 18.219999313354492,
+        "fixtureId": "CAF interior 07:saloon-strip:-1",
+        "family": "saloon opal strip",
+        "tone": "fluorescent",
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
+      },
+      {
+        "name": "CAF interior strip area source.013",
+        "collection": "CAF interior 07",
+        "position": [
+          0.8299999833106995,
+          3.236999988555908,
+          -132.42999267578125
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          0.9700000286102295,
+          0.9100000262260437
+        ],
+        "power": 55.0,
+        "width": 0.25,
+        "height": 18.219999313354492,
+        "fixtureId": "CAF interior 07:saloon-strip:1",
+        "family": "saloon opal strip",
+        "tone": "fluorescent",
+        "basis": "Source aligned below the visible diffuser; estimated rendering power"
       }
     ],
     "basis": "Native fixture sources; photo-led appearance, estimated rendering power; not measured photometry",

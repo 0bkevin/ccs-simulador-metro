@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { createTrainInterior } from "../src/train-interior.js";
 import { createTrainCab } from '../src/train-cab.js';
+import { createTrainDoors } from '../src/train-doors.js';
 
 const base = new URL("../public/models/blender/", import.meta.url);
 const manifest = JSON.parse(await fs.readFile(new URL("manifest.json", base), "utf8"));
@@ -47,6 +48,31 @@ test("passenger and door windows are genuinely transparent through every opaque 
   }
 });
 
+test('all saloon door window seals sit against their moving inner skins', () => {
+  const doors=createTrainDoors(train);
+  doors.update(0,{doorsOpen:false});
+  for(const open of [false,true]) {
+    for(let i=0;i<60;i++)doors.update(.05,{doorsOpen:open,doorSide:'both'});
+    train.updateMatrixWorld(true);
+    for(const leaf of doors.leaves) {
+      const [index,,,localLeaf]=leaf.object.userData.doorId.split(':').map(Number);
+      const car=manifest.train.interior.cars[index-1];
+      const z=car.center+car.direction*(leaf.object.userData.doorCentreLocal+localLeaf*.442)+leaf.object.position.z;
+      for(const [y,dz] of [[2.60,.27],[2.60,-.27],[2.183,0],[3.046,0]]) {
+        const ray=new THREE.Raycaster(new THREE.Vector3(leaf.side*.7+leaf.object.position.x,y,z+dz),new THREE.Vector3(leaf.side,0,0));
+        const hits=ray.intersectObject(leaf.object,true);
+        const seal=hits.find(h=>/interior black seals/.test(h.object.material.name));
+        const skin=hits.find(h=>/interior red door/.test(h.object.material.name));
+        assert.ok(seal && skin,`${leaf.object.userData.doorId}: seal overlaps an actual inner door panel`);
+        const gap=skin.distance-seal.distance;
+        assert.ok(gap>=-.001 && gap<.012,`${leaf.object.userData.doorId}: seal seated on skin, gap ${gap}`);
+      }
+    }
+  }
+  for(let i=0;i<60;i++)doors.update(.05,{doorsOpen:false});
+  train.updateMatrixWorld(true);
+});
+
 test("exterior aperture cuts leave the passenger aisle unobstructed", () => {
   for (const car of manifest.train.interior.cars) {
     const ray = new THREE.Raycaster(new THREE.Vector3(.22,car.eyeY,car.center+car.direction*7.4),new THREE.Vector3(0,0,-car.direction),0,15);
@@ -68,7 +94,7 @@ test("gangways remain open with continuous floors between all seven cars", () =>
 test("interior camera and lights follow the moving train without exceeding the car envelope", () => {
   const camera=new THREE.PerspectiveCamera();
   const interior=createTrainInterior(train,camera,null,manifest);
-  assert.equal(interior.lights.length,23);
+  assert.equal(interior.lights.length,16);
   for(const car of manifest.train.interior.cars){
     interior.select(car.index);interior.update(0,true);
     const before=camera.position.clone();
@@ -77,9 +103,80 @@ test("interior camera and lights follow the moving train without exceeding the c
     assert.ok(Math.abs(camera.position.x)<.6 && camera.position.y>car.floorY && camera.position.y<3.3);
     interior.move(99);assert.equal(interior.state.travel,7.6);
     interior.move(-99);assert.equal(interior.state.travel,-9.6);
-    assert.ok(interior.lights.filter(l=>l.visible).length<=10);
+    assert.ok(interior.lights.filter(l=>l.visible).length<=7);
   }
   interior.dispose();
+});
+
+test('saloon light sources follow both continuous ceiling strips and have seated joint covers', () => {
+  train.updateMatrixWorld(true);
+  for(const car of manifest.train.interior.cars) {
+    const collection=`CAF interior ${String(car.index).padStart(2,'0')}`;
+    let root;
+    train.traverse(o=>{if(!o.isMesh && o.userData.sourceAsset==='train' && o.userData.sourceCollection===collection)root=o;});
+    assert.ok(root,'native interior collection exists');
+    const strips=manifest.lighting.trainAreaLights.filter(l=>l.collection===collection && l.family==='saloon opal strip');
+    assert.equal(strips.length,2,'two sources aligned to the physical light strips');
+    assert.deepEqual(strips.map(s=>Math.sign(s.position[0])).sort(),[-1,1]);
+    for(const source of strips) {
+      const position=new THREE.Vector3(...source.position);
+      const direction=new THREE.Vector3(0,0,-1).applyQuaternion(new THREE.Quaternion(...source.quaternion));
+      assert.ok(direction.y<-.99,'light projects into the saloon');
+      assert.ok(source.width<.3 && source.height>18,'narrow full-length strip, not a central flood light');
+      const ray=new THREE.Raycaster(position.clone(),new THREE.Vector3(0,1,0),0,.03);
+      // The centre can coincide with a section joint; check quarter length.
+      ray.ray.origin.z+=source.height*.24;
+      const lens=ray.intersectObject(root,true)[0];
+      assert.match(lens?.object.material.name||'',/opal light diffusers/,'source sits directly below its visible diffuser');
+      assert.ok(lens.distance<.015,'source cannot be buried behind the housing');
+      assert.ok(lens.object.material.emissiveMap,'the optical shading must survive GLB export');
+      const uv=lens.object.geometry.getAttribute('uv');
+      assert.ok(uv,'each curved cover needs its own optical coordinates');
+      let minU=Infinity,maxU=-Infinity,minV=Infinity,maxV=-Infinity;
+      for(let i=0;i<uv.count;i++) {minU=Math.min(minU,uv.getX(i));maxU=Math.max(maxU,uv.getX(i));minV=Math.min(minV,uv.getY(i));maxV=Math.max(maxV,uv.getY(i));}
+      assert.ok(maxU-minU>.99 && maxV-minV>.99,'texture covers both curvature and socket ends');
+      // Along the whole strip, a ray must meet either its lens or a seated
+      // retaining band; the previous double hoops left uncovered end gaps.
+      for(let i=0;i<=100;i++) {
+        ray.set(new THREE.Vector3(position.x,3.20,position.z+source.height*(i/100-.5)),new THREE.Vector3(0,1,0));ray.far=.14;
+        const hit=ray.intersectObject(root,true)[0];
+        assert.ok(hit && hit.point.y<3.26,`${collection} side ${position.x}, sample ${i} at ${ray.ray.origin.z}: continuous fitted underside (${hit?.object.name}, y=${hit?.point.y})`);
+      }
+    }
+  }
+});
+
+test('interior inspection illuminates adjacent cars without overriding the orbit camera', () => {
+  const camera=new THREE.PerspectiveCamera();camera.position.set(.2,2.5,manifest.train.interior.cars[3].center);
+  const interior=createTrainInterior(train,camera,null,manifest),before=camera.position.clone();
+  interior.update(0,false,camera.position.z,true);
+  assert.deepEqual(camera.position.toArray(),before.toArray());
+  assert.deepEqual([...new Set(interior.lights.filter(l=>l.visible).map(l=>l.userData.carIndex))].sort(),[3,4,5]);
+  interior.update(0,false,camera.position.z,false);
+  assert.deepEqual([...new Set(interior.lights.filter(l=>l.visible).map(l=>l.userData.carIndex))],[4]);
+  interior.dispose();
+});
+
+test('reflected saloon light stays inside the moving consist and is disabled outside interior views', () => {
+  const camera=new THREE.PerspectiveCamera();
+  const interior=createTrainInterior(train,camera,null,manifest);
+  assert.equal(interior.bounceLights.length,7);
+  interior.select(4);interior.update(0,true);
+  assert.deepEqual(interior.bounceLights.filter(l=>l.visible).map(l=>l.userData.carIndex),[3,4,5]);
+  for(const light of interior.bounceLights) {
+    const car=interior.cars[light.userData.carIndex-1];
+    assert.ok(light.position.y>car.floorY && light.position.y<car.floorY+.1,'bounce starts at the reflecting floor');
+    assert.ok(new THREE.Vector3(0,0,-1).applyQuaternion(light.quaternion).y>.99,'reflected light points at the ceiling');
+    assert.ok(light.intensity>0 && light.intensity<1,'bounce has a low, bounded energy');
+  }
+  const light=interior.bounceLights[3];
+  train.updateMatrixWorld(true);const before=light.getWorldPosition(new THREE.Vector3());
+  train.position.z+=200;train.updateMatrixWorld(true);
+  assert.ok(Math.abs(light.getWorldPosition(new THREE.Vector3()).z-before.z-200)<1e-5);
+  train.position.z-=200;train.updateMatrixWorld(true);
+  interior.update(0,false,camera.position.z,false);
+  assert.ok(interior.bounceLights.every(l=>!l.visible),'no saloon bounce in exterior views');
+  interior.dispose();assert.equal(light.parent.parent,null,'disposing the controller detaches its lights');
 });
 
 test('both operator cabs have a clear eye line, solid floor and correctly sized native HMI', () => {

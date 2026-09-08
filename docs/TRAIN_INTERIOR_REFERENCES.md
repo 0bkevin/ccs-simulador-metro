@@ -165,9 +165,9 @@ The interior meshes, including its panel seams, light diffusers, curved seats,
 straps, cantilevers, threshold grooves and bridge strips, are exported into
 the actual playable train asset. True openings and transparent glazing belong
 to the exterior model; the interior adds gasket rings rather than an opaque
-second layer of glass. Native area lights sit at Y = 3.29 and local
-`u = -6, 0, 6` per car, pointing downward, with 1.8 × 4.7 m rectangles and
-50 W each. These are rendering parameters chosen for visibility, not claimed
+second layer of glass. Native saloon area lights follow both visible strips
+at X = ±0.83 m and Y = 3.237 m, pointing downward. Each is 0.25 m wide and
+spans its saloon, with 75 W of rendering power. These are rendering parameters chosen for visibility, not claimed
 electrical specifications; their web counterparts move with the train.
 
 The default passenger camera height is Y = 2.57 m, approximately 1.50 m above
@@ -218,3 +218,88 @@ interior camera by the same distance; entering and leaving station inspection
 restored the passenger view and pause state. The preview browser suspended
 animation frames during this automated session, so these checks do not establish
 a live frame rate or a real-time keyboard-driving performance result.
+
+## Saloon door attachment correction
+
+The interior door inspection found that passenger-window trim had been reused
+on the moving leaves: its gasket and sill lay 21–26 mm ahead of the red skin,
+and the separate rectangular skins did not back the full gasket perimeter.
+Each leaf now has one formed inner panel with a rounded aperture, a closed
+rubber section seated on that panel and a continuous reveal reaching the
+existing glass. The inappropriate projecting sill is removed. Perimeter
+returns join the inner and exterior skins; all of these parts remain children
+of the same moving leaf.
+
+Door headers and jambs have returns to the body, with the release hardware
+positioned from the actual sloping header surface. The longitudinal handrails
+have curved supports around the light diffusers to ceiling mounting plates;
+seat-end and wheelchair rails reach the wall liner, and the partition-door
+pull has mounting studs. These are attachment corrections to the existing
+photo-led model, not newly verified manufacturer dimensions.
+
+The model inspector includes **PUERTAS DEL SALÓN** for checking the same
+doorway in each car with the existing open/close commands. A geometry regression
+checks all 112 leaves in closed and open states, requiring the window seal to
+overlap and sit within 12 mm of its supporting inner skin. It fails on the
+previous export's detached trim.
+
+Native review captures: [doors closed](../blender/qa/native-saloon-doors-closed.png)
+and [doors open](../blender/qa/native-saloon-doors-open.png).
+Final browser captures: [closed](../blender/qa/web-saloon-doors-closed.jpg)
+and [open](../blender/qa/web-saloon-doors-open.jpg). The browser review also
+checked the reversed driving car. All **65 tests passed**, including the new
+attachment regression, and the production build succeeded. The current native
+source SHA-256 is `08ad0e82982a371bc213dd260d184023a6e7284ba383bfa55d525d9ae86e85c8`;
+the manifest matches it, public and production assets match byte-for-byte,
+and the environment geometry and lighting metadata remain unchanged.
+
+## Saloon lighting correction
+
+The two longitudinal opal strips retain the delivery-photo placement and
+curved section. Their former open half-cylinder meshes and doubled, detached
+end hoops are replaced by closed mounting channels seated into the ceiling,
+3 mm lenses and one narrow retaining band bridging each lens joint. Seated
+edge rails finish the sides. The luminous surface is neutral white; its
+emission is separate from the satin metal housing.
+
+The follow-up visual pass replaces the uniform emissive white with an authored
+256 × 128 optical falloff map packed into the native material and the GLB.
+Each cover has its own UV coordinates: the centre is luminous, the wrapped
+edges are softer and the socket ends fall off slightly. This makes the convex
+section legible without painting dark lines onto the lamp. The satin metal
+retaining bands are 34 mm wide and the seated side lips have small bevels.
+These optical and fitting dimensions are appearance estimates from the same
+reference photographs, not newly discovered manufacturer specifications.
+
+Each car now has two narrow area sources immediately below the visible lenses,
+replacing the three broad centreline washes. The manifest carries all fourteen
+saloon sources and the two existing cab lamps. The web interior inspector
+illuminates the selected car and its neighbours while keeping its orbit camera
+independent; exterior views retain only the nearest car's sources.
+
+Direct saloon source power is calibrated to 55 Blender radiant watts per
+strip, with a slightly warm neutral tint. For WebGL, one low-power upward
+rectangle near the floor approximates reflected light on the ceiling and
+upper panels; Cycles computes its own indirect illumination. These seven
+renderer helpers are not additional physical train lamps. Only helpers for
+the viewed car and its neighbours run, and they turn off in exterior views.
+
+The geometry regression samples both strips across all seven cars for continuous
+lens/joint coverage and verifies that each downward-facing source lies directly
+below a visible diffuser. Rendering power remains an appearance calibration,
+not a measured fleet lamp wattage or certified photometric result.
+
+Reviewed captures: [native ceiling](../blender/qa/native-saloon-lights-ceiling.png),
+[native saloon](../blender/qa/native-saloon-lights-saloon.png),
+[web ceiling](../blender/qa/web-saloon-lights-ceiling.jpg),
+[saloon at the station](../blender/qa/web-saloon-lights-station.jpg), and
+[playable saloon in the tunnel](../blender/qa/web-saloon-lights-tunnel.jpg).
+The tunnel capture was rendered at a deterministic 220 m route position;
+it checks appearance, not a measured live frame rate.
+All **68 tests passed** and the production build succeeded. The current native
+source SHA-256 is `223b9281727e414b4954f40c888d6a653cff88a9d98e2b4535c36a642d5d3344`;
+the export manifest matches it, and the public and production assets match
+byte-for-byte. Station geometry and lighting metadata remain unchanged.
+
+The optical pass also retains a [before capture](../blender/qa/web-saloon-lights-before-optics.jpg)
+at the same passenger viewpoint as the updated station capture.

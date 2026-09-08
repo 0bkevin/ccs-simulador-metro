@@ -50,7 +50,7 @@ Fotos, cotas disponibles y estimaciones: `../docs/TRAIN_INTERIOR_REFERENCES.md`.
 ```
 
 Las siete colecciones `CAF interior NN` se exportan dentro de `train.glb`.
-Sus 23 luces AREA (21 de salón y dos de cabina) se conservan en `lighting.trainAreaLights` y se mueven con
+Sus 16 luces AREA (dos tiras por salón y dos luces de cabina) se conservan en `lighting.trainAreaLights` y se mueven con
 el tren; sólo se activan las cercanas a la cámara. Los huecos nativos atraviesan
 la carrocería, las juntas y las hojas de puerta; el vidrio usa alfa transparente.
 
@@ -58,6 +58,11 @@ Para reconstruir únicamente los interiores preservando la carrocería:
 `python3 blender/make_interior_textures.py` genera gráficos propios con Pillow;
 después ejecuta Blender con `--python blender/rebuild_interior.py` y exporta
 con `export_web.py`. Las texturas quedan empaquetadas en el archivo nativo.
+`interior_model.rebuild_saloon_lighting()` permite reemplazar sólo las carcasas,
+los difusores y las fuentes del salón conservando puertas, asientos y cabinas.
+El material opal incluye un mapa de emisión empaquetado para distinguir la
+curvatura y los extremos. WebGL aproxima la luz reflejada hacia el techo con
+una fuente tenue por salón visible; no representa lámparas físicas adicionales.
 
 Double-click `run_metro_game.command` in Finder, or run:
 

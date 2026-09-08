@@ -18,6 +18,22 @@ export function createTrainInterior(train, camera, renderer, manifest) {
     lightGroup.add(light);
     return light;
   });
+  // WebGL has no diffuse interreflection. One broad, low-energy upward
+  // source per saloon approximates the floor/wall bounce from its two strips.
+  // These are renderer helpers, not extra fixtures in the native train.
+  const bounceLights = cars.flatMap(car => {
+    const strips = (manifest.lighting?.trainAreaLights || []).filter(data =>
+      data.family === 'saloon opal strip' && Number(data.collection.slice(-2)) === car.index);
+    if (strips.length !== 2) return [];
+    const length = Math.min(...strips.map(data => data.height));
+    const bounce = new THREE.RectAreaLight(0xf0f2ed, strips.reduce((power,data) => power + data.power,0) * .24 / (2.1 * length), 2.1, length);
+    bounce.name = `Saloon ${car.index} reflected ceiling light`;
+    bounce.position.set(0,car.floorY + .055,(strips[0].position[2]+strips[1].position[2])/2);
+    bounce.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),new THREE.Vector3(0,1,0));
+    bounce.userData.carIndex = car.index;
+    bounce.visible = false; lightGroup.add(bounce);
+    return [bounce];
+  });
   let carIndex = 1, view = "saloon", enabled = false, revision = 0, dragging = null;
   let yaw = 0, pitch = 0, travel = 6.63;
   const anchor = new THREE.Vector3(.22, 2.57, 0);
@@ -38,7 +54,7 @@ export function createTrainInterior(train, camera, renderer, manifest) {
     if (view === "cab-seat") { travel=9.55;anchor.x=.64*(car?.direction || 1);anchor.y=2.55;yaw=-.48;pitch=-.35; }
     revision++;
   }
-  function update(distance, active, viewingZ = distance) {
+  function update(distance, active, viewingZ = distance, interiorView = active) {
     enabled = active && cars.length > 0;
     const car = cars[carIndex - 1];
     if (enabled && car) {
@@ -46,9 +62,10 @@ export function createTrainInterior(train, camera, renderer, manifest) {
       camera.lookAt(camera.position.x + car.direction * Math.sin(yaw) * Math.cos(pitch), camera.position.y + Math.sin(pitch), camera.position.z - car.direction * Math.cos(yaw) * Math.cos(pitch));
     }
     // Interior and adjacent-car illumination follows the consist. Platform
-    // views light just the cars nearest the camera, not all 21 area sources.
+    // views light just the nearest car; interior views include its neighbours.
     const near = enabled ? carIndex : cars.reduce((best, c) => Math.abs(distance + c.center - viewingZ) < Math.abs(distance + (cars[best - 1]?.center || 0) - viewingZ) ? c.index : best, 1);
-    for (const light of lights) light.visible = train.visible && Math.abs(light.userData.carIndex - near) <= (enabled ? 1 : 0);
+    for (const light of lights) light.visible = train.visible && Math.abs(light.userData.carIndex - near) <= (interiorView ? 1 : 0);
+    for (const light of bounceLights) light.visible = train.visible && interiorView && Math.abs(light.userData.carIndex - near) <= 1;
   }
   function move(value) {
     if (view === 'operator' || view === 'cab-seat') return;
@@ -71,9 +88,9 @@ export function createTrainInterior(train, camera, renderer, manifest) {
   element?.addEventListener("pointermove", drag);
   element?.addEventListener("pointerup", up);
   element?.addEventListener("pointercancel", up);
-  return { select, update, move, cars, lights,
+  return { select, update, move, cars, lights, bounceLights,
     get revision() { return revision; },
     get state() { return { carIndex, view, travel, enabled }; },
-    dispose() { element?.removeEventListener("pointerdown", down); element?.removeEventListener("pointermove", drag); element?.removeEventListener("pointerup", up); element?.removeEventListener("pointercancel", up); },
+    dispose() { lightGroup.removeFromParent(); element?.removeEventListener("pointerdown", down); element?.removeEventListener("pointermove", drag); element?.removeEventListener("pointerup", up); element?.removeEventListener("pointercancel", up); },
   };
 }
