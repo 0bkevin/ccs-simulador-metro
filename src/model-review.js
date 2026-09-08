@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { loadBlenderAssets } from "./blender-assets.js";
+import { createTrainDoors } from './train-doors.js';
 import "./style.css";
 
 const host = document.querySelector("#review-canvas");
@@ -26,10 +27,26 @@ floor.receiveShadow = true;
 const camera = new THREE.PerspectiveCamera(42, innerWidth / Math.max(1, innerHeight), .1, 2000);
 const controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.dampingFactor = .075;
 controls.screenSpacePanning = true; controls.minDistance = 1; controls.maxDistance = 1000; controls.maxPolarAngle = Math.PI * .49;
-const buttons = [...document.querySelectorAll("[data-view]")]; const names = { threequarter: "TRES CUARTOS", front: "FRENTE", side: "LATERAL", rear: "TRASERA", full: "TREN COMPLETO" };
-let bounds;
+const buttons = [...document.querySelectorAll("[data-view]")]; const names = { threequarter: "TRES CUARTOS", front: "FRENTE", cab: "VENTANA DE CABINA", doors: "PUERTAS", side: "LATERAL", rear: "TRASERA", full: "TREN COMPLETO" };
+let bounds, frontDoorZ = -.73, activeView = 'threequarter';
+let doors, lastTime = performance.now(), lastRevision = -1, needsRender = true;
+const doorState = { doorsOpen: false, doorSide: -1 };
+const openButton = document.querySelector('#review-open-doors');
+const closeButton = document.querySelector('#review-close-doors');
+const sideSelect = document.querySelector('#review-door-side');
+const doorStatus = document.querySelector('#review-door-status');
+function commandDoors(open) { doorState.doorsOpen = open; }
+openButton.onclick = () => commandDoors(true);
+closeButton.onclick = () => commandDoors(false);
+sideSelect.onchange = () => { doorState.doorSide = Number(sideSelect.value); };
+addEventListener('keydown', event => {
+  if (event.code === 'KeyE' && !event.repeat && !['INPUT','SELECT','TEXTAREA','BUTTON'].includes(event.target.tagName)) {
+    event.preventDefault(); commandDoors(!doorState.doorsOpen);
+  }
+});
 function frame(view) {
   if (!bounds) return;
+  activeView = view;
   // Finish any damped orbit before applying an explicit inspection view.
   controls.enableDamping = false; controls.update();
   const c = bounds.getCenter(new THREE.Vector3()); const s = bounds.getSize(new THREE.Vector3());
@@ -49,12 +66,46 @@ function frame(view) {
     controls.target.copy(cabTarget);
   }
   else if (view === "rear") { position = new THREE.Vector3(-5.5, 3.1, bounds.min.z - 8); controls.target.set(0, 2.1, bounds.min.z + 2); }
+  else if (view === "cab") { position = new THREE.Vector3(-5.3, 2.5, 2.05); controls.target.set(-1.1, 2.25, .92); }
+  else if (view === "doors") { position = new THREE.Vector3(-5.6, 2.4, frontDoorZ-.07); controls.target.set(-1.3, 2.1, frontDoorZ); }
   else if (view === "side") { position = new THREE.Vector3(19, 2.8, bounds.max.z - 10); controls.target.set(0, 2.1, bounds.max.z - 10); }
   else position = new THREE.Vector3(c.x + length * .65, c.y + height * .8, bounds.max.z + length * .6);
-  camera.position.copy(position); if (view === "full") controls.target.copy(c); controls.update(); controls.enableDamping = true; buttons.forEach((b) => b.classList.toggle("active", b.dataset.view === view)); status.textContent = `${names[view]} · BLENDER GLB`;
+  if (view === "full") controls.target.copy(c);
+  if (innerWidth < 700) {
+    position.sub(controls.target).multiplyScalar(Math.max(1, .9/camera.aspect)).add(controls.target);
+    camera.setViewOffset(innerWidth,innerHeight,0,innerHeight*.12,innerWidth,innerHeight);
+  } else camera.clearViewOffset();
+  camera.position.copy(position); controls.update(); controls.enableDamping = true; buttons.forEach((b) => b.classList.toggle("active", b.dataset.view === view)); status.textContent = `${names[view]} · BLENDER GLB`;
 }
 function fail(error) { console.error(error); status.textContent = "NO SE PUDO CARGAR EL GLB"; document.querySelector("#review-error").hidden = false; }
 buttons.forEach((b) => b.addEventListener("click", () => frame(b.dataset.view)));
-loadBlenderAssets().then((assets) => { const { train } = assets; window.__metroReview = { train, scene, camera, controls, renderer, bounds: null, manifest: assets.manifest, assetSource: assets.source }; train.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); scene.add(train); bounds = new THREE.Box3().setFromObject(train, true); window.__metroReview.bounds = bounds; floor.position.y = bounds.min.y - .05; const view = new URLSearchParams(location.search).get("view"); frame(Object.hasOwn(names, view) ? view : "threequarter"); }).catch(fail);
-function resize() { camera.aspect = innerWidth / Math.max(1, innerHeight); camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); }
-addEventListener("resize", resize); function render() { controls.update(); renderer.render(scene, camera); requestAnimationFrame(render); } render();
+loadBlenderAssets({ includeEnvironment: false }).then((assets) => { const { train } = assets;
+  const leadCar = assets.manifest.train.interior.cars[0];
+  frontDoorZ = leadCar.center + leadCar.direction * (assets.manifest.train.doors.centresLocalMetres?.['CAF car 01']?.at(-1) ?? 7);
+  doors = createTrainDoors(train); doors.update(0, doorState);
+  openButton.disabled = closeButton.disabled = sideSelect.disabled = false;
+  window.__metroReview = { train, scene, camera, controls, renderer, doors, doorState, frame, bounds: null, manifest: assets.manifest, assetSource: assets.source };
+  train.traverse((o) => { if (o.isMesh) {
+    // Alpha-blended glass must not cast the opaque silhouette used by PCF shadows.
+    const materials = Array.isArray(o.material) ? o.material : [o.material];
+    o.castShadow = materials.some(material => !material.transparent);
+    o.receiveShadow = true;
+  } }); scene.add(train); bounds = new THREE.Box3().setFromObject(train, true); window.__metroReview.bounds = bounds; floor.position.y = bounds.min.y - .05; const view = new URLSearchParams(location.search).get("view"); frame(Object.hasOwn(names, view) ? view : "threequarter"); }).catch(fail);
+function resize() { camera.aspect = innerWidth / Math.max(1, innerHeight); camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); frame(activeView); }
+addEventListener("resize", resize);
+controls.addEventListener('change', () => { needsRender = true; });
+addEventListener('resize', () => { needsRender = true; });
+function render(now = performance.now()) {
+  const dt = document.hidden ? 0 : Math.min(.1, Math.max(0, (now-lastTime)/1000)); lastTime = now;
+  if (doors) {
+    doors.update(dt, doorState);
+    doorStatus.textContent = doors.moving ? (doorState.doorsOpen ? 'ABRIENDO…' : 'CERRANDO…') : (doorState.doorsOpen ? 'ABIERTAS' : 'CERRADAS');
+    openButton.setAttribute('aria-pressed', String(doorState.doorsOpen));
+    closeButton.setAttribute('aria-pressed', String(!doorState.doorsOpen));
+  }
+  controls.update();
+  if (!document.hidden && (needsRender || lastRevision !== doors?.revision)) {
+    renderer.render(scene, camera); needsRender = false; lastRevision = doors?.revision;
+  }
+  requestAnimationFrame(render);
+} render();

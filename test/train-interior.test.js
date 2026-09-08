@@ -33,7 +33,9 @@ test("seven native saloons have floors, curved seating and complete ceiling geom
 
 test("passenger and door windows are genuinely transparent through every opaque shell layer", () => {
   for (const car of manifest.train.interior.cars) {
-    for (const u of [-4.666,0,4.666,2.333+.442]) {
+    const doors=manifest.train.doors.centresLocalMetres[`CAF car ${String(car.index).padStart(2,'0')}`];
+    const windows=doors.slice(1).map((b,i)=>(doors[i]+b)/2);
+    for (const u of [...windows,doors[2]+.442]) {
       for (const side of [-1,1]) {
         const ray = new THREE.Raycaster(new THREE.Vector3(side*.35,2.45,car.center+car.direction*u),new THREE.Vector3(side,0,0),0,1.3);
         const hit=ray.intersectObject(train,true)[0];

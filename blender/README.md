@@ -26,8 +26,8 @@ mientras que el juego presenta las mallas y materiales 3D de ese mismo `.blend`.
 
 El navegador no ejecuta Blender Game Engine: sólo presenta la geometría GLB y
 la lógica de simulación WebGL. La geometría es una aproximación visual y no una
-reconstrucción medida 1:1. El export actual no incluye animaciones de puertas o
-ruedas. Las páginas de revisión se sirven en `http://localhost:5173/` durante
+reconstrucción medida 1:1. Las hojas de puerta se exportan como ensamblajes independientes y se animan
+por comando en la web y el controlador nativo. Las ruedas siguen estáticas. Las páginas de revisión se sirven en `http://localhost:5173/` durante
 desarrollo; no se abre ningún túnel público.
 
 ## Interior de pasajeros

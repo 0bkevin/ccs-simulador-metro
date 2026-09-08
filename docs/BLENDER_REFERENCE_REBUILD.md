@@ -62,8 +62,8 @@ CAF fleets were substituted as if they were Caracas specifications.
 
 The estimated 0.50 m intercar gap gives a 20.96 m module pitch and approximately
 148.05 m between the model's outermost parts. This is distinct from an exact
-manufacturer coupler-to-coupler length. Doors and wheels remain static in the
-web export. The native source and exported assets use the same geometry. The
+manufacturer coupler-to-coupler length. Passenger doors now move on user commands in the web export; wheels remain
+static. See [EXTERIOR_MODEL.md](EXTERIOR_MODEL.md) for the exterior follow-up. The native source and exported assets use the same geometry. The
 train is placed 3 m forward of the previous origin so its complete envelope
 fits the 150 m platforms (-145 to +5 m relative to each stop marker).
 
@@ -105,4 +105,5 @@ Local source-only station references include [`Caño Amarillo`](../blender/refer
 export contains `train.glb` and `environment.glb`; the browser reads their
 manifest source hash and collection metadata. The passenger saloons are
 documented in [TRAIN_INTERIOR_REFERENCES.md](TRAIN_INTERIOR_REFERENCES.md).
-Neither the train nor its interior is certified 1:1; doors and wheels remain static.
+Neither the train nor its interior is certified 1:1. Passenger doors now animate;
+cab access doors and wheels remain static. See [EXTERIOR_MODEL.md](EXTERIOR_MODEL.md).

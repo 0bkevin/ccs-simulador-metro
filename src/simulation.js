@@ -7,6 +7,9 @@ export function createSimulation(stops = [], { routeEnd = Infinity } = {}) {
     speed: 0,
     target: 0,
     doorsOpen: true,
+    doorSide: stops[0]?.platformLayout === 'island' ? 1 : -1,
+    doorStation: 0,
+    lastServed: -1,
     dwell: 3,
     started: false,
     missed: false,
@@ -33,29 +36,40 @@ export function createSimulation(stops = [], { routeEnd = Infinity } = {}) {
       s.paused = v;
       return this;
     },
-    toggleDoors() {
-      const stop = stops[s.target],
-        zone = stop && Math.abs(s.position - stop.distance) <= 12;
-      if (s.speed > 0.04 || !zone || s.missed || s.complete) return this.state;
-      if (s.doorsOpen) {
+    setDoors(open) {
+      open = Boolean(open);
+      if (open === s.doorsOpen) return this.state;
+      const station = s.doorsOpen ? s.doorStation : stops.findIndex((stop, i) =>
+        (i === s.target || i === s.lastServed) && Math.abs(s.position - stop.distance) <= 12);
+      const stop = stops[station];
+      if (s.paused || s.speed > 0.04 || !stop || Math.abs(s.position - stop.distance) > 12 || s.missed || s.complete) return this.state;
+      if (!open) {
         if (s.dwell <= 0) {
           s.doorsOpen = false;
-          s.serviceCount++;
-          if (s.target === stops.length - 1) s.complete = true;
-          else s.target++;
+          if (station > s.lastServed) {
+            s.serviceCount++;
+            s.lastServed = station;
+            if (s.target === stops.length - 1) s.complete = true;
+            else s.target++;
+          }
         }
       } else {
         s.doorsOpen = true;
-        s.dwell = 3;
+        s.doorStation = station;
+        s.doorSide = stop.platformLayout === 'island' ? 1 : -1;
+        s.dwell = station > s.lastServed ? 3 : 0;
       }
       return this.state;
     },
+    toggleDoors() { return this.setDoors(!s.doorsOpen); },
     recover() {
       const stop = stops[s.target];
       if (!stop || s.complete || !s.missed) return this.state;
       s.position = stop.distance;
       s.speed = 0;
       s.doorsOpen = true;
+      s.doorStation = s.target;
+      s.doorSide = stop.platformLayout === 'island' ? 1 : -1;
       s.dwell = 3;
       s.missed = false;
       s.score = Math.max(0, s.score - 15);

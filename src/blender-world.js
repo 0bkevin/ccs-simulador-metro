@@ -4,6 +4,7 @@ import { getStationView } from "./station-views.js";
 import { createTrainInterior } from "./train-interior.js";
 import { applyStationCut, createScaleRuler } from './station-inspection.js';
 import { createStationCamera } from './station-camera.js';
+import { createTrainDoors } from './train-doors.js';
 
 /** World adapter for the reviewed Blender export. Coordinates are deliberately
  * untouched: Blender uses Y up and Z along the playable route. */
@@ -28,6 +29,7 @@ export function createWorld(THREE, renderer, stations = [], assets) {
   train.name = "Blender train · 7 cars";
   root.add(train);
   prepareBlenderMeshes(train, renderer);
+  const doors = createTrainDoors(train);
 
   const cameras = {
     forward: new THREE.PerspectiveCamera(70, 1, 0.05, 1200),
@@ -86,8 +88,9 @@ export function createWorld(THREE, renderer, stations = [], assets) {
     lighting.focus(cameras.inspection.position, inspection.collection);
     revision++;
   }
-  function update(_dt = 0.016, distance = 0) {
+  function update(_dt = 0.016, distance = 0, state = {}) {
     train.position.set(0, 0, Number(distance) || 0);
+    doors.update(_dt, state);
     const z = train.position.z;
     cameras.forward.position.set(0, 2.5, z + 5.0);
     cameras.forward.lookAt(0, 2, z + 15);
@@ -147,8 +150,9 @@ export function createWorld(THREE, renderer, stations = [], assets) {
     get camera() { return activeCamera(); },
     get inspection() { return inspection; },
     get activeStation() { return activeStation; },
-    get renderRevision() { return revision + interior.revision; },
-    get doorFraction() { return 0; },
+    get renderRevision() { return revision + interior.revision + doors.revision; },
+    get doorFraction() { return doors.fraction; },
+    doors,
     setCameraMode, inspectStation, leaveInspection, moveTunnel, update, resize, dispose, controls,
     stationAssemblies, railPaths: [], lighting, interior, cameraGuard,
     assetSource: assets.source,

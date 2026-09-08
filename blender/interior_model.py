@@ -12,7 +12,7 @@ import math
 import random
 import bpy
 from mathutils import Vector
-from body_geometry import BODY_HALF_LENGTH, CAR_PITCH, DOOR_CENTRES, body_width
+from body_geometry import BODY_HALF_LENGTH, CAR_PITCH, door_centres, saloon_bay_centres, body_width
 from train_model import _material, _mesh, _box as _native_box, _beam, _tube, _cylinder, _rounded_rect
 
 FLOOR_Y = 1.07
@@ -102,9 +102,9 @@ def _inner_window(side,zc,width,mats,coll):
 def _walls(center,direction,driving,mats,coll):
     u0=-10.21;u1=8.10 if driving else 10.21
     z0,z1=sorted([center+direction*u0,center+direction*u1])
-    windows=[(center+direction*u,1.672) for u in (-4.666,0,4.666)]
+    windows=[(center+direction*u,1.672) for u in saloon_bay_centres(driving)]
     windows +=[(center+direction*u,.702) for u in ((-8.73,) if driving else (-8.73,8.73))]
-    doorz=[center+direction*u for u in DOOR_CENTRES]
+    doorz=[center+direction*u for u in door_centres(driving)]
     for side in (-1,1):
         # Split all lining at door edges; leave each real doorway clear.
         cuts=sorted([z0,z1]+[z+off for z in doorz for off in (-.9,.9)])
@@ -119,15 +119,20 @@ def _walls(center,direction,driving,mats,coll):
                 _panel('CAF interior window pier',side,2.15,3.083,aa,bb,mats['liner'],coll)
             _panel('CAF interior stainless skirting',side,FLOOR_Y+.012,1.21,a,b,mats['steel'],coll,.074)
         for z,w in windows: _inner_window(side,z,w,mats,coll)
-        for z in doorz:
+        for bay,z in enumerate(doorz,1):
             for leaf in (-1,1):
+                before=set(coll.objects)
                 zz=z+leaf*.442
                 _panel('CAF interior door lower red panel',side,FLOOR_Y,2.147,zz-.433,zz+.433,mats['door'],coll,.048)
                 _panel('CAF interior door upper red panel',side,3.083,3.105,zz-.433,zz+.433,mats['door'],coll,.048)
                 for edge in (-1,1):
                     _panel('CAF interior door window red stile',side,2.147,3.083,zz+edge*.37-.063,zz+edge*.37+.063,mats['door'],coll,.048)
                 _inner_window(side,zz,.520,mats,coll)
-            _panel('CAF interior door meeting seal',side,FLOOR_Y,3.10,z-.007,z+.007,mats['dark'],coll,.074)
+                _panel('CAF interior door meeting seal',side,FLOOR_Y,3.10,z+leaf*.006-.006,z+leaf*.006+.006,mats['dark'],coll,.074)
+                car=int(coll.name[-2:])
+                assembly=bpy.data.objects.get(f'CAF door {car:02d} {side:+d} {bay} {leaf*direction:+d}')
+                if assembly:
+                    for obj in set(coll.objects)-before: obj.parent=assembly
             _panel('CAF interior rounded door mechanism header',side,3.115,3.24,z-.915,z+.915,mats['liner'],coll,.095)
             for edge in (-1,1):
                 _panel('CAF interior door jamb',side,FLOOR_Y,3.16,z+edge*.89-.026,z+edge*.89+.026,mats['steel'],coll,.09)
@@ -197,21 +202,21 @@ def _bench(side,zc,count,priority,mats,coll):
 
 def _seating(center,direction,driving,index,mats,coll):
     for side in (-1,1):
-        for u in (-4.666,0,4.666):
+        for bay,u in enumerate(saloon_bay_centres(driving)):
             # Accessible saloon at the cab end: ALAMYS shows 3 opposite 5.
-            priority=driving and u==4.666
+            priority=driving and bay==2
             count=3 if priority and side==1 else 5
             offset=-.475 if count==3 else 0
             _bench(side,center+direction*(u+offset),count,priority,mats,coll)
             if count==3:
-                z=center+direction*(u+1.0)
+                z=center+direction*(u+.875)
                 _beam('CAF interior wheelchair bay horizontal support',(side*1.29,1.91,z-.40),(side*1.29,1.91,z+.40),.018,mats['steel'],coll,12)
                 for dz in (-.35,.35):
                     _beam('CAF interior wheelchair bay rail mounting',(side*1.29,1.91,z+dz),(side*1.40,1.91,z+dz),.018,mats['steel'],coll,12)
         for u in ((-8.96,) if driving else (-8.96,8.96)):
             _bench(side,center+direction*u,3,False,mats,coll)
     # Thin floor-to-ceiling centre poles at vestibules, one in each door bay.
-    for u in DOOR_CENTRES:
+    for u in door_centres(driving):
         z=center+direction*u
         _beam('CAF interior vestibule centre pole',(0,FLOOR_Y,z),(0,3.36,z),.0175,mats['steel'],coll,12)
         for y in (FLOOR_Y+.009,3.36):
@@ -273,8 +278,21 @@ def _ceiling(center,direction,driving,mats,coll):
 def _end_portal(center,direction,u,mats,coll,cab=False):
     z=center+direction*u
     for side in (-1,1):
-        _box('CAF interior cab bulkhead cheek' if cab else 'CAF interior open gangway lining',(side*(.98 if cab else 1.15),2.22,z),(.89 if cab else .34,2.30,.075),mats['liner'],coll,.025)
-    _box('CAF interior end lintel',(0,3.29,z),(2.30,.22,.09),mats['liner'],coll,.025)
+        if cab:
+            # The original rectangular partition protruded through the canted
+            # exterior above the cab door. Keep its existing position, but
+            # trim the edge to the actual body envelope.
+            ys=[1.07+i*2.30/32 for i in range(33)]
+            outline=[(.405,1.07)]+[(body_width(y)-.09,y) for y in ys]+[(.405,3.37)]
+            n=len(outline)
+            verts=[(side*x,y,z+dz) for dz in (-.0375,.0375) for x,y in outline]
+            faces=[tuple(reversed(range(n))),tuple(range(n,2*n))]
+            faces += [(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
+            if side<0:faces=[tuple(reversed(f)) for f in faces]
+            _mesh('CAF interior cab bulkhead cheek',verts,faces,mats['liner'],coll)
+        else:
+            _box('CAF interior open gangway lining',(side*1.15,2.22,z),(.34,2.30,.075),mats['liner'],coll,.025)
+    _box('CAF interior end lintel',(0,3.29,z),(2.04 if cab else 2.30,.22,.09),mats['liner'],coll,.025)
     if cab:
         _box('CAF interior driver partition door',(0,2.135,z+direction*.004),(.81,2.11,.034),mats['liner'],coll,.036)
         # Door's small closed smoked window as photographed, not a claimed cab.

@@ -670,6 +670,25 @@ button {
   box-shadow: 0 14px 38px rgba(0, 0, 0, .2);
   backdrop-filter: blur(8px);
   pointer-events: auto;
+  max-height: calc(100dvh - 75px);
+  overflow-y: auto;
+}
+.review-door-side { display: flex; justify-content: space-between; align-items: center; margin: 10px 0; color: var(--paper); font: 11px "DM Mono", monospace; }
+.review-door-side select { background: #202528; color: var(--paper); border: 1px solid #65706b; padding: 6px; }
+#review-door-status { margin-top: 10px; }
+.review-presets button[aria-pressed="true"] { border-color: var(--orange); }
+.review-presets button:disabled { opacity: .4; cursor: wait; }
+.review-presets button:focus-visible, .review-door-side select:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+@media (max-width: 700px) {
+  .review-page #model-review .review-panel { max-height: 38dvh; padding: 12px; bottom: 10px; }
+  #model-review .review-presets { grid-template-columns: repeat(3, 1fr); margin-top: 6px; }
+  #model-review .review-presets[aria-label="Mandos de puertas"] { grid-template-columns: 1fr 1fr; }
+  #model-review .review-divider { margin: 8px 0; }
+  #model-review .review-door-side { margin: 6px 0; }
+  #model-review .review-head h1 { font-size: 34px; }
+  #model-review .review-head p { font-size: 11px; }
+  #model-review .review-status { display: none; }
+  #model-review .interior-link { display: none; }
 }
 .review-presets {
   display: grid;

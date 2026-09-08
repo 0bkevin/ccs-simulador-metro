@@ -17,6 +17,21 @@ CAB_JOIN = 7.35 + CAB_SHIFT
 DOOR_WIDTH = 1.750  # structural opening, table 5-8
 DOOR_HEIGHT = 2.0225
 DOOR_CENTRES = (-7.00, -2.333, 2.333, 7.00)
+# The driving-car elevation (Fig.2-3) leaves a complete leaf-width of solid
+# side between the passenger opening and the cab entrance. The intermediate
+# layout previously put the opening leaf over the cab door. These positions
+# are fitted estimates, not dimensioned CAF door-station coordinates.
+CAB_DOOR_CENTRES = (-7.00, -2.55, 1.90, 6.35)
+
+
+def door_centres(driving=False):
+    return CAB_DOOR_CENTRES if driving else DOOR_CENTRES
+
+
+def saloon_bay_centres(driving=False):
+    if not driving:return (-4.666, 0., 4.666)
+    doors=door_centres(True)
+    return tuple((a+b)/2 for a,b in zip(doors,doors[1:]))
 
 # (height, half breadth), traced on the outside of the extrusion diagram.
 # PCHIP derivatives preserve the continuous waist without overshoot.

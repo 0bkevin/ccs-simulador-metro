@@ -101,8 +101,9 @@ electrical specifications; their web counterparts move with the train.
 
 The default passenger camera height is Y = 2.57 m, approximately 1.50 m above
 the estimated floor, with a small lateral offset to avoid a central pole.
-Doors remain closed/static in this export; the viewing controls do not claim
-a physical walking or collision simulation.
+The subsequent exterior pass attaches the existing inner door skins to the
+moving exterior leaves. Passenger doors now respond to user commands; the
+viewing controls do not claim a physical walking or collision simulation.
 
 ## Review and verification
 

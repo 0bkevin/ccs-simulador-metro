@@ -2,7 +2,7 @@
   "schema": "metro-blender-web-export/1",
   "source": {
     "file": "metro_caracas_line1.blend",
-    "sha256": "6fe4d62fbfa47bdbb85011324774702f6ad04a1428ecc64062ef500c44b75640"
+    "sha256": "7f704ad6319a3d668137388dde3c6f5d3280d44f86f77c2f0b578b0ad338cc3d"
   },
   "coordinateSystem": {
     "up": "Y",
@@ -45,6 +45,59 @@
       "CAF car 06",
       "CAF car 07"
     ],
+    "doors": {
+      "leafCount": 112,
+      "baysPerSidePerCar": 4,
+      "centresLocalMetres": {
+        "CAF car 01": [
+          -7.0,
+          -2.55,
+          1.9,
+          6.35
+        ],
+        "CAF car 02": [
+          -7.0,
+          -2.333,
+          2.333,
+          7.0
+        ],
+        "CAF car 03": [
+          -7.0,
+          -2.333,
+          2.333,
+          7.0
+        ],
+        "CAF car 04": [
+          -7.0,
+          -2.333,
+          2.333,
+          7.0
+        ],
+        "CAF car 05": [
+          -7.0,
+          -2.333,
+          2.333,
+          7.0
+        ],
+        "CAF car 06": [
+          -7.0,
+          -2.333,
+          2.333,
+          7.0
+        ],
+        "CAF car 07": [
+          -7.0,
+          -2.55,
+          1.9,
+          6.35
+        ]
+      },
+      "mechanism": "paired exterior sliding leaves",
+      "nodeProperty": "doorId",
+      "travelMetres": 0.895,
+      "clearanceMetres": 0.115,
+      "timingBasis": "visual estimate; not a manufacturer cycle specification"
+    },
     "interior": {
       "collections": [
         "CAF interior 01",
@@ -218,8 +271,8 @@
   "assets": {
     "train": {
       "path": "models/blender/train.glb",
-      "meshes": 9714,
-      "triangles": 1795012,
+      "meshes": 10062,
+      "triangles": 1823900,
       "bounds": {
         "min": [
           -1.55385,
@@ -239,8 +292,8 @@
       },
       "collections": {
         "CAF car 01": {
-          "meshes": 677,
-          "triangles": 182622,
+          "meshes": 723,
+          "triangles": 199602,
           "bounds": {
             "min": [
               -1.55385,
@@ -260,8 +313,8 @@
           }
         },
         "CAF car 02": {
-          "meshes": 666,
-          "triangles": 163382,
+          "meshes": 706,
+          "triangles": 162166,
           "bounds": {
             "min": [
               -1.55385,
@@ -281,8 +334,8 @@
           }
         },
         "CAF car 03": {
-          "meshes": 666,
-          "triangles": 163382,
+          "meshes": 706,
+          "triangles": 162166,
           "bounds": {
             "min": [
               -1.55385,
@@ -302,8 +355,8 @@
           }
         },
         "CAF car 04": {
-          "meshes": 666,
-          "triangles": 163382,
+          "meshes": 706,
+          "triangles": 162166,
           "bounds": {
             "min": [
               -1.55385,
@@ -323,8 +376,8 @@
           }
         },
         "CAF car 05": {
-          "meshes": 666,
-          "triangles": 163382,
+          "meshes": 706,
+          "triangles": 162166,
           "bounds": {
             "min": [
               -1.55385,
@@ -344,8 +397,8 @@
           }
         },
         "CAF car 06": {
-          "meshes": 666,
-          "triangles": 163382,
+          "meshes": 706,
+          "triangles": 162166,
           "bounds": {
             "min": [
               -1.55385,
@@ -365,8 +418,8 @@
           }
         },
         "CAF car 07": {
-          "meshes": 677,
-          "triangles": 182622,
+          "meshes": 723,
+          "triangles": 199602,
           "bounds": {
             "min": [
               -1.55385,
@@ -386,8 +439,8 @@
           }
         },
         "CAF interior 01": {
-          "meshes": 670,
-          "triangles": 78294,
+          "meshes": 678,
+          "triangles": 78478,
           "bounds": {
             "min": [
               -1.45193,
@@ -407,8 +460,8 @@
           }
         },
         "CAF interior 02": {
-          "meshes": 738,
-          "triangles": 91254,
+          "meshes": 746,
+          "triangles": 91382,
           "bounds": {
             "min": [
               -1.45193,
@@ -428,8 +481,8 @@
           }
         },
         "CAF interior 03": {
-          "meshes": 738,
-          "triangles": 91254,
+          "meshes": 746,
+          "triangles": 91382,
           "bounds": {
             "min": [
               -1.45193,
@@ -449,8 +502,8 @@
           }
         },
         "CAF interior 04": {
-          "meshes": 738,
-          "triangles": 91254,
+          "meshes": 746,
+          "triangles": 91382,
           "bounds": {
             "min": [
               -1.45193,
@@ -470,8 +523,8 @@
           }
         },
         "CAF interior 05": {
-          "meshes": 738,
-          "triangles": 91254,
+          "meshes": 746,
+          "triangles": 91382,
           "bounds": {
             "min": [
               -1.45193,
@@ -491,8 +544,8 @@
           }
         },
         "CAF interior 06": {
-          "meshes": 738,
-          "triangles": 91254,
+          "meshes": 746,
+          "triangles": 91382,
           "bounds": {
             "min": [
               -1.45193,
@@ -512,8 +565,8 @@
           }
         },
         "CAF interior 07": {
-          "meshes": 670,
-          "triangles": 78294,
+          "meshes": 678,
+          "triangles": 78478,
           "bounds": {
             "min": [
               -1.45193,
