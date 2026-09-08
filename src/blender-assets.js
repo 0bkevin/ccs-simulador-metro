@@ -1,3 +1,4 @@
+import study from '../public/models/station-specs.json' with { type: 'json' };
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 /** Load the reviewed Blender export used by every browser view.
@@ -16,8 +17,8 @@ export async function loadBlenderAssets({ base = "/models/blender", onProgress, 
   if (!manifest.source?.sha256 || !manifest.source?.file || !manifest.train || manifest.train.carCount !== 7 || !trainPath || !environmentPath || !Array.isArray(manifest.stations)) {
     throw new Error("manifest.json no contiene el contrato Blender esperado (source, assets, train.carCount=7 y stations).");
   }
-  if (manifest.stations.length !== 5 || manifest.stations.some((stop, index) => Number(stop.distance) !== index * 160)) {
-    throw new Error("La exportación Blender debe declarar cinco paradas a 0, 160, 320, 480 y 640 m.");
+  if (manifest.stations.length !== 5 || manifest.stations.some((stop, index) => stop.id !== study.stations[index].id || Number(stop.distance) !== study.stations[index].distance)) {
+    throw new Error("La exportación Blender no coincide con las cinco estaciones del estudio a escala. Reconstruye y exporta el entorno.");
   }
   const loader = new GLTFLoader();
   const resolveAssetUrl = (path) => path.startsWith("/") ? path : path.startsWith("models/") ? `/${path}` : `${base.replace(/\/$/, "")}/${path}`;

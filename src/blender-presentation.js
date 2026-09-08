@@ -12,7 +12,7 @@ export function configureBlenderRenderer(renderer) {
 }
 
 export function prepareBlenderMeshes(root, renderer) {
-  const anisotropy = Math.min(4, renderer?.capabilities.getMaxAnisotropy() || 1);
+  const anisotropy = Math.min(8, renderer?.capabilities.getMaxAnisotropy() || 1);
   root.traverse(object => {
     if (!object.isMesh) return;
     object.castShadow = true;
@@ -32,7 +32,8 @@ export function createBlenderLighting(scene, renderer, manifest) {
   if (environment) scene.environment = environment.texture;
   scene.background = new THREE.Color(0x18212a);
   scene.environmentIntensity = .35;
-  scene.add(new THREE.HemisphereLight(0xe2e8ed, 0x383a3c, .55));
+  const ambient = new THREE.HemisphereLight(0xe2e8ed, 0x383a3c, .55);
+  scene.add(ambient);
   const key = new THREE.DirectionalLight(0xfff1df, 1.8);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
@@ -47,25 +48,72 @@ export function createBlenderLighting(scene, renderer, manifest) {
   // glTF does not carry Blender AREA lights. The exporter preserves their
   // transforms, size, color and source power alongside the meshes instead.
   RectAreaLightUniformsLib.init();
-  const washes = new Map();
-  for (const data of manifest?.lighting?.areaLights || []) {
-    // Preserve native proportions; this exposure calibration is not a physical
-    // conversion from Blender watts to Three.js photometric units.
-    const light = new THREE.RectAreaLight(new THREE.Color().fromArray(data.color), data.power / (data.width * data.height), data.width, data.height);
-    light.name = data.name;
-    light.position.fromArray(data.position);
-    light.quaternion.fromArray(data.quaternion);
-    light.userData.sourceCollection = data.collection;
-    light.visible = false;
-    scene.add(light);
-    if (!washes.has(data.collection)) washes.set(data.collection, []);
-    washes.get(data.collection).push(light);
-  }
-  function focus(target, collection, exterior = false) {
+  const sources = (manifest?.lighting?.areaLights || []).map(data => ({ ...data,
+    point: new THREE.Vector3(...data.position), rotation: new THREE.Quaternion(...data.quaternion) }));
+  // Fixed-size pool keeps the hundreds of native fixture sources affordable.
+  // Every active emitter retains an authored fixture's EXACT position and size;
+  // no invented lights slide along the tunnel with the camera.
+  const fixtureLights = Array.from({ length: 24 }, () => {
+    const light = new THREE.RectAreaLight(0xffffff, 0, 1, 1);
+    scene.add(light); return light;
+  });
+  // WebGL RectAreaLight has no shadow maps. Two co-located spot proxies carry
+  // a small share of the nearest fixtures' output for local occlusion. Cycles
+  // uses the original area sources and full area shadows instead.
+  const shadowLights = Array.from({ length: 2 }, () => {
+    const light = new THREE.SpotLight(0xffffff, 0, 20, Math.PI * .43, .65, 2);
+    light.castShadow = true; light.shadow.mapSize.set(512, 512);
+    light.shadow.camera.near = .08; light.shadow.bias = -.0001; light.shadow.normalBias = .012;
+    scene.add(light, light.target); return light;
+  });
+  const direction = new THREE.Vector3();
+  const smooth = t => { t = THREE.MathUtils.clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+  function focus(target, collection, exterior = false, drawing = false) {
+    const tunnel = collection?.startsWith('Tunnel ');
+    const daylight = exterior || collection === 'Station Caño Amarillo' || drawing;
+    scene.background.set(daylight ? 0x18212a : 0x060808);
+    ambient.intensity = daylight ? .48 : tunnel ? .035 : .13;
+    key.intensity = daylight ? 1.8 : 0;
+    fill.intensity = daylight ? .22 : 0;
+    scene.environmentIntensity = daylight ? .35 : tunnel ? .045 : .15;
     key.target.position.copy(target);
     key.position.copy(target).add(new THREE.Vector3(-18, 28, -12));
-    // Only one station's three native washes participates in each frame.
-    for (const [name, lights] of washes) for (const light of lights) light.visible = !exterior && name === collection;
+    const nearby = drawing ? [] : sources.filter(data => {
+      if (data.collection !== collection) return false;
+      // Prevent a mezzanine's unshadowed area source from illuminating through
+      // its floor slab. A tunnel's other bore is likewise a separate enclosure.
+      if (tunnel && Math.abs(data.point.x - target.x) > 4.2) return false;
+      const dy = data.point.y - target.y;
+      return dy > -.8 && dy < (daylight ? 6 : 3.65);
+    }).map(data => ({ data, distance: data.point.distanceTo(target) }))
+      .filter(item => item.distance < 42).sort((a, b) => a.distance - b.distance);
+    const radius = Math.min(42, nearby[fixtureLights.length]?.distance || 42);
+    fixtureLights.forEach((light, i) => {
+      const item = nearby[i];
+      light.intensity = 0; light.userData.sourceFixture = null;
+      if (!item) return;
+      const { data, distance } = item;
+      light.name = data.name;
+      light.position.copy(data.point); light.quaternion.copy(data.rotation);
+      light.width = data.width; light.height = data.height;
+      light.color.fromArray(data.color);
+      // Exposure calibration, not a conversion to surveyed lux or lamp watts.
+      const fade = 1 - smooth((distance - radius * .78) / (radius * .22));
+      light.intensity = data.power * .30 * fade / (data.width * data.height);
+      light.userData.sourceFixture = data.fixtureId; light.userData.sourceCollection = data.collection;
+      light.userData.sourcePower = data.power;
+    });
+    shadowLights.forEach((light, i) => {
+      const area = fixtureLights[i];
+      light.intensity = area.userData.sourceFixture ? area.userData.sourcePower * .10 : 0;
+      light.position.copy(area.position); light.color.copy(area.color);
+      direction.set(0, 0, -1).applyQuaternion(area.quaternion);
+      light.target.position.copy(area.position).add(direction);
+      light.userData.sourceFixture = area.userData.sourceFixture;
+    });
   }
-  return { focus, washes, dispose() { environment?.dispose(); studio?.dispose(); pmrem?.dispose(); key.shadow.dispose(); } };
+  return { focus, sources, fixtureLights, shadowLights, dispose() {
+    environment?.dispose(); studio?.dispose(); pmrem?.dispose(); key.shadow.dispose();
+    shadowLights.forEach(light => light.shadow.dispose());
+  } };
 }

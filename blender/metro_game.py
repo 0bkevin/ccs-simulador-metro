@@ -23,13 +23,10 @@ import os
 from mathutils import Vector
 
 
-ROUTE = [
-    ("Caño Amarillo", 0),
-    ("Capitolio", 160),
-    ("Bellas Artes", 320),
-    ("Plaza Venezuela", 480),
-    ("Altamira", 640),
-]
+import sys
+sys.path.insert(0, os.path.dirname(__file__))
+from station_config import STOPS
+ROUTE = list(STOPS.items())
 MAX_SPEED = 18.0
 STOP_ZONE = 5.0
 

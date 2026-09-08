@@ -97,12 +97,9 @@ def escalator(c,x,z,width=1.2,base=FLOOR,height=4,metal='steel',fixed=False,reve
     name='Fixed stair' if fixed else 'Escalator'
     for i in range(n):
         yy=base+(i+1)*rise; zz=z+i*tread
-        _box(c,'granite' if fixed else 'steel',name+' tread',(x,yy-rise/2,zz+tread/2),(width,rise,tread))
-        _box(c,'pale' if fixed else 'black',name+' riser shadow',(x,yy-rise*.5,zz-.001),(width,rise*.82,.006))
+        _box(c,'granite' if fixed else 'tread',name+' tread',(x,yy-rise/2,zz+tread/2),(width,rise,tread))
+        if fixed:_box(c,'pale',name+' riser shadow',(x,yy-rise*.5,zz-.001),(width,rise*.82,.006))
         _box(c,'rail',name+' tread nose',(x,yy+.003,zz+.015),(width,.007,.025))
-        if not fixed:
-            for j in range(1,int(width/.065)):
-                _box(c,'black','Escalator tread flutes',(x-width/2+j*.065,yy+.004,zz+tread/2),(.010,.003,tread-.02))
     for side in (-1,1):
         xx=x+side*(width/2+.075)
         # Closed four-sided skirt avoids the paper-thin floating old stairs.
@@ -127,12 +124,23 @@ def escalator(c,x,z,width=1.2,base=FLOOR,height=4,metal='steel',fixed=False,reve
                 _beam(c,'black','Rounded escalator rubber handrail',path[i-1],path[i],.044,10)
             for dz,yy in ((-.39,base+.84),(run+.35,base+height+.84)):
                 _box(c,'red','Escalator emergency stop',(xx-side*.052,yy,z+dz),(.014,.065,.065))
+            # Separate stainless cladding panels, lower skirt and fixing caps.
+            # These small breaks let the metal catch light as manufactured parts.
+            for i in range(1,math.ceil(run/1.25)):
+                zz=z+i*1.25
+                yy=base+height*(zz-z)/run
+                _box(c,'black','Escalator cladding panel joint',(xx-side*.046,yy+.52,zz),(.003,.84,.003))
+                for dy in (.15,.84):
+                    _beam(c,'rail','Escalator panel fixing',(xx-side*.048,yy+dy,zz+.025),(xx-side*.052,yy+dy,zz+.025),.007,8)
+            _beam(c,'black','Escalator skirt brush',(xx-side*.060,base+.10,z+.12),(xx-side*.060,base+height+.10,z+run),.014,6)
         for yy,zz in ((base+.31,z-.43),(base+height+.25,z+run+.44)):
             _box(c,'steel',name+' newel base',(xx,yy,zz),(.15,.58,.20))
     for yy,zz in ((base,z-.65),(base+height,z+run+.78)):
-        _box(c,'steel','Landing comb plate',(x,yy+.012,zz),(width,.025,.72))
-        for j in range(1,int(width/.07)):
-            _box(c,'black','Landing comb grooves',(x-width/2+j*.07,yy+.026,zz),(.014,.003,.69))
+        _box(c,'steel' if fixed else 'tread','Landing comb plate',(x,yy+.012,zz),(width,.025,.72))
+        if not fixed:
+            direction=1 if yy==base else -1
+            for j in range(1,int(width/.008)):
+                _box(c,'rail','Fine landing comb teeth',(x-width/2+j*.008,yy+.027,zz+direction*.33),(.003,.004,.06))
     if reverse:
         for key,data in batches.items():
             if key[0]!=c.name:continue
@@ -146,18 +154,31 @@ def escalator(c,x,z,width=1.2,base=FLOOR,height=4,metal='steel',fixed=False,reve
 
 
 def luminaire(c,x,y,z,longitudinal=False,round_light=False):
+    from station_lighting import fixture_light
     if round_light:
         _beam(c,'steel','Round downlight trim',(x,y+.07,z),(x,y,z),.16,16)
-        _beam(c,'light','Round recessed diffuser',(x,y-.006,z),(x,y-.012,z),.126,16)
+        _beam(c,'warm_light','Round recessed diffuser',(x,y-.006,z),(x,y-.012,z),.126,24)
+        fixture_light(c,'recessed downlight',(x,y-.018,z),.25,.25,22,'warm')
         return
     w,d=(.32,1.30) if longitudinal else (1.30,.32)
     _box(c,'steel','Fluorescent reflector tray',(x,y,z),(w,.07,d))
+    _box(c,'reflector','White enamel reflector',(x,y-.037,z),(w-.025,.009,d-.025))
+    for side in (-1,1):
+        _box(c,'reflector','Folded reflector lip',
+             (x+side*(w/2-.012) if longitudinal else x,y-.050,z if longitudinal else z+side*(d/2-.012)),
+             (.018,.045,d) if longitudinal else (w,.045,.018))
     for side in (-1,1):
         a=(x+side*.095,y-.05,z-.58) if longitudinal else (x-.58,y-.05,z+side*.095)
         b=(x+side*.095,y-.05,z+.58) if longitudinal else (x+.58,y-.05,z+side*.095)
-        _beam(c,'light','Paired fluorescent tube',a,b,.024,8)
+        _beam(c,'light','Paired fluorescent tube',a,b,.019,12)
+        for end in (-1,1):
+            xx=x+side*.095 if longitudinal else x+end*.557
+            zz=z+end*.557 if longitudinal else z+side*.095
+            _beam(c,'steel','Fluorescent tube end cap',(xx,y-.05,zz-.02) if longitudinal else (xx-.02,y-.05,zz),
+                  (xx,y-.05,zz+.02) if longitudinal else (xx+.02,y-.05,zz),.020,12)
     for end in (-1,1):
         _box(c,'ceramic','Tube lampholder',(x if longitudinal else x+end*.605,y-.04,z+end*.605 if longitudinal else z),(.25 if longitudinal else .055,.055,.055 if longitudinal else .25))
+    fixture_light(c,'paired fluorescent',(x,y-.080,z),w-.12,d-.10,55)
 
 
 def ceiling(c,x0,x1,z0,z1,y=4.57,fixtures=(),longitudinal=False):
@@ -206,10 +227,17 @@ def wall(c,name,x,z0,z1,finish='ceramic',y0=FLOOR,y1=4.3):
 def furniture(c,x,z,y=FLOOR):
     _box(c,'steel','Brushed platform bin',(x,y+.43,z),(.42,.86,.38))
     _box(c,'black','Litter aperture',(x,y+.72,z+.197),(.31,.13,.012))
+    _box(c,'steel','Bin folded lid',(x,y+.88,z),(.45,.045,.41))
+    _box(c,'black','Bin removable liner joint',(x,y+.84,z+.193),(.38,.008,.008))
+    for dx in (-.16,.16):
+        _box(c,'black','Bin rubber feet',(x+dx,y+.025,z),(.045,.05,.29))
     _box(c,'steel','Information cabinet',(x,y+1.05,z+4.5),(.60,2.10,.18))
     _box(c,'black','Information cabinet inset',(x,y+1.22,z+4.598),(.48,1.38,.012))
     _text(c,'INFORMACIÓN',(x,y+1.68,z+4.607),.063)
     _box(c,'red','Fire equipment marker',(x,y+.22,z+4.607),(.30,.14,.015))
+    for yy in (y+.4,y+1.75):
+        _beam(c,'steel','Cabinet door hinge',(x-.28,yy-.055,z+4.59),(x-.28,yy+.055,z+4.59),.014,10)
+    _beam(c,'rail','Cabinet lock',(x+.23,y+.90,z+4.59),(x+.23,y+.90,z+4.612),.021,12)
 
 
 def ticket_hall(c,name,cx,z0,z1,width=16,finish='ceramic'):
@@ -245,13 +273,13 @@ def ticket_hall(c,name,cx,z0,z1,width=16,finish='ceramic'):
 def island_structure(c,name,stop):
     a,b=stop-145,stop+5; core=stop-70
     finish='mosaic' if name=='Altamira' else 'ceramic'
-    for x in (-3.,13.):wall(c,name,x,a,b,finish)
+    for x in (-4.,14.):wall(c,name,x,a,b,finish)
     # Two separate escalator cores: opposite directions expose both ends of the
     # island, as seen in Altamira 07/08. Bay positions are photographic estimates.
     cores=(core,core+47)
     holes=[(zz-1.0,zz+8.6) for zz in cores]
     segments=[(a,holes[0][0]),(holes[0][1],holes[1][0]),(holes[1][1],b)]
-    for z0,z1 in segments:ceiling(c,-3,13,z0,z1,4.57,(2.8,7.2),name=='Altamira')
+    for z0,z1 in segments:ceiling(c,-4,14,z0,z1,4.57,(2.8,7.2),name=='Altamira')
     for zz in cores:
         if name=='Altamira':
             escalator(c,5,zz,1.26,metal='bronze')
@@ -259,8 +287,21 @@ def island_structure(c,name,stop):
         for x0,x1 in ((1.66,4.12),(5.88,8.34)):
             slab(c,x0,x1,zz-1.1,zz+8.6,name='Floating mezzanine edge slab')
             _box(c,'concrete','Exposed mezzanine fascia',((x0+x1)/2,4.77,zz-1.12),(x1-x0,.65,.24))
-        slab(c,-3,13,zz+8.6,zz+12.3,name='Mezzanine cross passage')
-        ceiling(c,-3,13,zz-1.1,zz+12.3,8.3,(2.8,7.2))
+        slab(c,-4,14,zz+8.6,zz+12.3,name='Mezzanine cross passage')
+        ceiling(c,-4,14,zz-1.1,zz+12.3,8.3,(2.8,7.2))
+        # The photographed escalator is housed in a structural core, not a
+        # freestanding ladder. Side cheeks carry the floating mezzanine edges.
+        for x in (4.06,5.94):
+            _box(c,'concrete','Island core load-bearing cheek',(x,2.96,zz+4.0),(.26,3.72,8.0))
+            if name=='Bellas Artes':
+                _box(c,'steel','Bellas Artes brushed core cladding',(x+(-.14 if x<5 else .14),2.86,zz+4.0),(.022,3.48,8.0))
+                for dz in (1.2,3.6,6.0):
+                    _box(c,'black','Core cladding vertical seam',(x+(-.153 if x<5 else .153),2.86,zz+dz),(.006,3.48,.016))
+        # Broad concrete fascias in Altamira are visible above the green exits.
+        if name=='Altamira':
+            for x0,x1 in ((1.66,4.12),(5.88,8.34)):
+                _box(c,'concrete','Altamira deep floating tray beam',((x0+x1)/2,4.55,zz-.7),(x1-x0,.72,.5))
+                pier(c,(x0+x1)/2,zz+10,MEZZ,8.3,width=.62)
         for x in (4.10,5.90):guard(c,x,zz-1.0,x,zz+8.5,glass=True)
         for x in (4.15,5.85):
             _box(c,'concrete','Escalator foot pedestal',(x,1.64,zz-.22),(.29,1.08,.54))
@@ -273,7 +314,12 @@ def island_structure(c,name,stop):
             fascia(c,'Bellas Artes',2.60,4.21,zz-11.0,2.5,.23)
             fascia(c,'Bellas Artes',7.40,4.21,zz-11.0,2.5,.23)
     # Ticket hall connects to the rear landing of the first escalator.
-    ticket_hall(c,name,5,core+12.3,core+34,width=16,finish=finish)
+    ticket_hall(c,name,5,core+12.3,core+34,width=18,finish=finish)
+    # Join both core landings at mezzanine level; a suspended disconnected
+    # second exit is not a usable architectural model.
+    slab(c,-4,14,core+34,cores[1]-1.1,name='Connecting mezzanine gallery')
+    ceiling(c,-4,14,core+34,cores[1]-1.1,8.3,(2.8,7.2))
+    for x in (-3.7,13.7):wall(c,name,x,core+34,cores[1]-1.1,finish,MEZZ,8.15)
     for x in (3.25,6.75):
         for zz in (a+15,b-14):furniture(c,x,zz)
     return core
@@ -291,7 +337,10 @@ def capitolio(c,stop):
     for side in (-1,1):
         cx=-6.7 if side==-1 else 10.7
         # Local vestibule floor extends behind the narrow platform.
-        slab(c,cx-3.15,cx+3.15,core-18,core+12,FLOOR,'floor','Widened Capitolio platform vestibule')
+        # Extend only outside the existing platform. A second slab over its
+        # top created coincident faces and black shading in actual Cycles light.
+        x0,x1=(cx-3.15,-7.1) if side==-1 else (11.1,cx+3.15)
+        slab(c,x0,x1,core-18,core+12,FLOOR,'floor','Widened Capitolio platform vestibule')
         escalator(c,cx-1.35,core,1.30)
         escalator(c,cx+.95,core,2.15,fixed=True)
         for dx in (-2.85,2.85):pier(c,cx+dx,core-.55,width=.84)
@@ -310,6 +359,15 @@ def capitolio(c,stop):
         ceiling(c,x0,x1,core-16,core+12,4.57,((x0+x1)/2,))
     ceiling(c,-1.6,5.6,core-16,core+12,4.77)
     ticket_hall(c,'Capitolio',2,core+12,core+37,width=22,finish='capitolio')
+    # Capitolio 06 shows substantial paired piers and deep intersecting beams
+    # in the ticket hall, plus a glazed information/control kiosk.
+    for x in (-3.4,2,7.4):
+        for zz in (core+20,core+29):pier(c,x,zz,MEZZ,8.3,width=.82)
+        _box(c,'concrete','Capitolio concourse longitudinal beam',(x,8.0,core+24.5),(1.1,.5,25))
+    _box(c,'ceramic','Capitolio information counter',(-7.4,MEZZ+.52,core+29),(2.6,1.04,3.6))
+    for x in (-8.7,-6.1):
+        _box(c,'glass','Information kiosk glazing',(x,MEZZ+1.69,core+29),(.025,1.25,3.6))
+    fascia(c,'Información',-7.4,7.45,core+27.15,2.75,.22)
     # Bright yellow tiled concourse piers and a central fixed flight between
     # escalators reproduce the Avenida Universidad hall photograph 03.
     for x in (-2.2,6.2):pier(c,x,core+33,MEZZ,8.3,'capitolio',1.1)
@@ -329,10 +387,10 @@ def plaza_venezuela(c,stop):
     wall(c,'Plaza Venezuela',11.2,a,b,'beige')
     # Open colonnades define the transfer platform, with two lighting systems:
     # linear lamps at the edge and round lamps in the inner circulation aisle.
-    ceiling(c,-7.2,11.2,a,core+21.5,4.75,(-2.65,6.65),True)
-    ceiling(c,-7.2,8.55,core+21.5,core+30.5,4.75,(-2.65,6.65),True)
+    ceiling(c,-7.2,11.2,a,core+21.5,4.75)
+    ceiling(c,-7.2,8.55,core+21.5,core+30.5,4.75)
     ceiling(c,10.35,11.2,core+21.5,core+30.5,4.75)
-    ceiling(c,-7.2,11.2,core+30.5,b,4.75,(-2.65,6.65),True)
+    ceiling(c,-7.2,11.2,core+30.5,b,4.75)
     ceiling(c,8.55,10.35,core+21.5,core+30.5,8.25,(9.45,))
     for x in (-5.5,9.5):
         for zz in [a+9+i*12 for i in range(12)]:
@@ -341,6 +399,18 @@ def plaza_venezuela(c,stop):
         for z0,z1 in ([(a,b)] if x<0 else [(a,core+21.5),(core+30.5,b)]):
             _box(c,'concrete','Longitudinal transfer hall beam',(x,4.40,(z0+z1)/2),(1.0,.62,z1-z0))
         for zz in [a+3+i*3.0 for i in range(49)]:luminaire(c,x+(-.75 if x<0 else .75),4.28,zz,round_light=True)
+    # Continuous edge lighting and tiled pier faces distinguish the L1 hall
+    # from the separate L3 gallery. Spacing is a photographic interpretation.
+    for x in (-2.65,6.65):
+        for i in range(30):
+            _box(c,'steel','Plaza Venezuela edge-light channel',(x,4.43,a+2.5+i*5),(.4,.11,4.86))
+            _box(c,'light','Plaza Venezuela continuous edge diffuser',(x,4.36,a+2.5+i*5),(.28,.025,4.78))
+            from station_lighting import fixture_light
+            fixture_light(c,'continuous platform strip',(x,4.342,a+2.5+i*5),.28,4.78,135)
+    for x in (-5.5,9.5):
+        for zz in [a+9+i*12 for i in range(12)]:
+            if x>0 and core+21<zz<core+31:continue
+            _box(c,'tile_beige','Plaza Venezuela ochre pier facing',(x,2.89,zz-.423),(.76,3.46,.018))
     # A recessed transfer opening descends behind the side platform. The L3
     # track level is not fabricated or merged into the Line 1 station box.
     slab(c,-13.8,-7.1,core-7,core,FLOOR,'floor','Transfer vestibule approach')
@@ -481,12 +551,40 @@ def build_underground(c,name,stop):
     if name=='Capitolio':capitolio(c,stop)
     elif name=='Plaza Venezuela':plaza_venezuela(c,stop)
     else:island_structure(c,name,stop)
-    for zz in (stop-126,stop-78,stop-28):
-        light=bpy.data.lights.new(name+' platform diffuse wash','AREA')
-        light.energy=240;light.shape='RECTANGLE';light.size=8;light.size_y=5
-        obj=bpy.data.objects.new(light.name,light);c.objects.link(obj)
-        obj.location=(5 if name in ('Bellas Artes','Altamira') else 2,4.3,zz)
-        obj.rotation_euler=(-math.pi/2,0,0)
 
 
 __all__=['build_underground','bellas_entrance','altamira_entrance','luminaire','fascia','escalator']
+
+
+def cano_entrance(parent,stop):
+    """Bemergui 1992 pp.230–231: exposed stair cheeks and paved side plazas.
+
+    Photograph-supported form; dimensions, access bay and ground datum are
+    estimates, not a claim to have recovered the complete construction plan.
+    """
+    c=_collection('Caño Amarillo urban context',parent)
+    ground=-3.5; rise=FLOOR-ground; z=stop-92
+    slab(c,-23,27,stop-149,stop+9,ground,'granite','Caño Amarillo paved exterior plaza')
+    for x in (-10.1,14.1):
+        escalator(c,x,z,3.1,ground,rise,fixed=True)
+        # Solid sloping exposed-concrete cheeks, observed in the architect's
+        # access photo, replace the generic narrow stair rail silhouette.
+        run=rise*math.sqrt(3)
+        for side in (-1,1):
+            xx=x+side*1.75
+            verts=[(xx+dx,yy,zz) for dx in (-.14,.14) for yy,zz in
+                   ((ground,z-.5),(ground+1.1,z-.5),(FLOOR+1.1,z+run+.7),(FLOOR-.25,z+run+.7))]
+            _geometry(c,'concrete','Caño Amarillo solid stair parapet',verts,[(0,3,2,1),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)])
+        slab(c,x-1.75,x+1.75,z+run,z+run+5,FLOOR,'granite','Caño Amarillo access landing')
+        slab(c,-10.1 if x<0 else 11.05,-7.0 if x<0 else 14.1,stop-84,stop-79,FLOOR,'floor','Screen access bridge')
+        for zz in (stop-84,stop-79):
+            guard(c,x,zz,-7.1 if x<0 else 11.1,zz,FLOOR,'steel')
+    for x in (-5.7,9.7):
+        for zz in range(-135,0,15):
+            pier(c,x,stop+zz,ground,-.86,width=.80)
+    for x in (-18.5,22.5):
+        for zz in (stop-127,stop-44):
+            _box(c,'concrete','Angular plaza planter',(x,ground+.45,zz),(5,.9,11))
+            _box(c,'soil','Planter soil',(x,ground+.92,zz),(4.5,.04,10.5))
+            for i in range(8):sphere(c,'plant','Low plaza planting',x+math.sin(i*3)*1.4,ground+1.2,zz-4+i*1.1,.48)
+    c['referenceBasis']='Mario Bemergui, 1992, photographs 4–5 (pp.230–231); access form observed, footprint estimated'

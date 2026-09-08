@@ -1,0 +1,2 @@
+public/models/blender/environment.glb filter=lfs diff=lfs merge=lfs -text
+dist/models/blender/environment.glb filter=lfs diff=lfs merge=lfs -text

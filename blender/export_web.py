@@ -27,13 +27,9 @@ from mathutils import Vector
 
 TRAIN_COLLECTIONS = [f"CAF car {i:02d}" for i in range(1, 8)]
 INTERIOR_COLLECTIONS = [f"CAF interior {i:02d}" for i in range(1, 8)]
-STATION_COLLECTIONS = [
-    ("cano-amarillo", "Caño Amarillo", "Station Caño Amarillo", 0),
-    ("capitolio", "Capitolio", "Station Capitolio", 160),
-    ("bellas-artes", "Bellas Artes", "Station Bellas Artes", 320),
-    ("plaza-venezuela", "Plaza Venezuela", "Station Plaza Venezuela", 480),
-    ("altamira", "Altamira", "Station Altamira", 640),
-]
+sys.path.insert(0, os.path.dirname(__file__))
+from station_config import STATIONS, SPEC
+STATION_COLLECTIONS = [(s['id'], s['name'], 'Station '+s['name'], s['distance']) for s in STATIONS]
 CONTEXT_COLLECTIONS = [
     "Altamira Plaza entrance",
     "Caño Amarillo urban context",
@@ -60,7 +56,7 @@ def source_hash(path):
     return h.hexdigest()
 
 
-def area_lights(scene, prefix='Station '):
+def area_lights(scene, prefix=('Station ', 'Tunnel ', 'Bellas Artes cultural context', 'Altamira Plaza entrance')):
     """Preserve native area lights, which glTF's punctual-light extension omits."""
     result = []
     for obj in scene.objects:
@@ -79,6 +75,10 @@ def area_lights(scene, prefix='Station '):
             'power': light.energy,
             'width': light.size * abs(scale.x),
             'height': (light.size_y if light.shape in {'RECTANGLE', 'ELLIPSE'} else light.size) * abs(scale.y),
+            'fixtureId': obj.get('fixtureId', obj.name),
+            'family': obj.get('fixtureFamily', 'train interior'),
+            'tone': obj.get('tone', 'fluorescent'),
+            'basis': obj.get('lightingBasis', 'Native train interior source'),
         })
     return result
 
@@ -245,12 +245,17 @@ def main():
     os.makedirs(output, exist_ok=True)
     if os.path.abspath(bpy.data.filepath) != source:
         raise RuntimeError(f"Loaded blend does not match --source: {bpy.data.filepath}")
+    loaded_hash = source_hash(source)
+    from station_lighting import validate_surface_maps
+    validate_surface_maps()
     source_scene = bpy.context.scene
-    lighting = {'areaLights': area_lights(source_scene), 'trainAreaLights': area_lights(source_scene, 'CAF interior ')}
+    lighting = {'areaLights': area_lights(source_scene), 'trainAreaLights': area_lights(source_scene, 'CAF interior '),
+                'basis': 'Native fixture sources; photo-led appearance, estimated rendering power; not measured photometry',
+                'powerUnit': 'Blender radiant watts; not electrical lamp wattage'}
     source_depsgraph = source_scene.view_layers[0].depsgraph
 
     train_objs = source_objects(TRAIN_COLLECTIONS + INTERIOR_COLLECTIONS, include_labels=True)
-    env_names = ["Collection", "Linea 1 route", *[x[2] for x in STATION_COLLECTIONS], *CONTEXT_COLLECTIONS]
+    env_names = ["Collection", "Linea 1 route", *["Tunnel "+s["id"] for s in STATIONS], *[x[2] for x in STATION_COLLECTIONS], *CONTEXT_COLLECTIONS]
     env_objs = source_objects(env_names, include_labels=False, exclude_names=LABEL_NAMES)
     if len(train_objs) == 0 or len(env_objs) == 0:
         raise RuntimeError(f"Unexpected empty source selection train={len(train_objs)} environment={len(env_objs)}")
@@ -277,10 +282,13 @@ def main():
         for scene in scenes:
             clean_scene(scene)
 
+    if source_hash(source) != loaded_hash:
+        raise RuntimeError('Source .blend changed during export; rebuild the export from the saved source')
     manifest = {
         "schema": "metro-blender-web-export/1",
-        "source": {"file": os.path.basename(source), "sha256": source_hash(source)},
+        "source": {"file": os.path.basename(source), "sha256": loaded_hash},
         "coordinateSystem": {"up": "Y", "routeAxis": "Z", "exportYup": False},
+        "scale": {"units": "metres", "route": SPEC["route"], "tunnel": SPEC["tunnel"]},
         "train": {"carCount": len(TRAIN_COLLECTIONS), "collections": TRAIN_COLLECTIONS,
             "interior": {
                 "collections": [name for name in INTERIOR_COLLECTIONS if bpy.data.collections.get(name)],
@@ -291,8 +299,8 @@ def main():
                     for i,name in enumerate(INTERIOR_COLLECTIONS,1) if bpy.data.collections.get(name)],
             }},
         "stations": [
-            {"id": station_id, "name": name, "distance": distance, "collection": collection}
-            for station_id, name, collection, distance in STATION_COLLECTIONS
+            {**STATIONS[i], "collection": collection}
+            for i, (station_id, name, collection, distance) in enumerate(STATION_COLLECTIONS)
         ],
         "assets": records,
         "lighting": lighting,

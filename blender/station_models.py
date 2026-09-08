@@ -1,7 +1,7 @@
 """Photograph-led station architecture. Y is vertical; Z follows the route.
 
-Dimensions other than Altamira's published vertical organisation are modelling
-estimates. The five 150 m envelopes and 160 m stop spacing compress the route.
+Station footprints are photographic estimates; Altamira has published level offsets.
+Shared metre datums retain 150 m platforms and leave playable interstation tunnels.
 All geometry is native mesh/font data; reference photographs are not textures.
 """
 import math
@@ -9,7 +9,7 @@ from array import array
 import bpy
 from mathutils import Vector
 
-STOPS = {'Caño Amarillo': 0., 'Capitolio': 160., 'Bellas Artes': 320., 'Plaza Venezuela': 480., 'Altamira': 640.}
+from station_config import STOPS, BY_NAME
 LAYOUT = {n: ('island' if n in ('Bellas Artes', 'Altamira') else 'side') for n in STOPS}
 M = {}
 _batches = {}
@@ -17,7 +17,7 @@ _batches = {}
 
 def _materials():
     palette = {
-        'floor': ((.145,.157,.161), .48, 0), 'grout': ((.072,.078,.080), .88, 0),
+        'floor': ((.19,.205,.218), .40, 0), 'grout': ((.072,.078,.080), .88, 0),
         'edge': ((.92,.63,.06), .65, 0), 'rail': ((.39,.43,.46), .26, .78),
         'steel': ((.29,.33,.34), .32, .65), 'ballast': ((.058,.060,.058), 1., 0),
         'concrete': ((.40,.42,.40), .93, 0), 'pale': ((.62,.63,.57), .89, 0),
@@ -28,7 +28,10 @@ def _materials():
         'beige': ((.57,.51,.39), .69, 0), 'teal': ((.045,.31,.28), .40, .23),
         'water': ((.055,.30,.28), .19, .15), 'plant': ((.08,.20,.085), .95, 0),
         'white': ((.87,.88,.82), .48, 0), 'orange': ((1.,.37,.035), .42, 0),
-        'green': ((.12,.92,.18), .40, 0), 'light': ((.89,.95,1.), .24, 0),
+        'green': ((.12,.92,.18), .40, 0), 'light': ((.84,.91,1.), .24, 0),
+        'warm_light': ((1.,.78,.51), .30, 0), 'utility_light': ((.92,1.,.85), .34, 0),
+        'reflector': ((.76,.78,.73), .25, .12),
+        'tread': ((.30,.33,.35), .32, .72),
         'granite': ((.31,.33,.32), .36, .04), 'ceramic': ((.72,.73,.68), .27, 0),
         'capitolio': ((.72,.53,.045), .26, 0), 'mosaic': ((.56,.245,.085), .40, 0),
         'bronze': ((.38,.34,.13), .32, .68), 'glass': ((.20,.29,.28), .16, .14),
@@ -39,7 +42,10 @@ def _materials():
         mat = bpy.data.materials.get('L1 architecture / '+key) or bpy.data.materials.new('L1 architecture / '+key)
         mat.diffuse_color = (*color, 1)
         mat.use_nodes = True
-        p = mat.node_tree.nodes.get('Principled BSDF')
+        mat.node_tree.nodes.clear()
+        p = mat.node_tree.nodes.new('ShaderNodeBsdfPrincipled')
+        output=mat.node_tree.nodes.new('ShaderNodeOutputMaterial')
+        mat.node_tree.links.new(p.outputs['BSDF'],output.inputs['Surface'])
         p.inputs['Base Color'].default_value = (*color, 1)
         p.inputs['Roughness'].default_value = rough
         p.inputs['Metallic'].default_value = metallic
@@ -47,14 +53,25 @@ def _materials():
             p.inputs['Alpha'].default_value=.28
             mat.diffuse_color=(*color,.28)
             if hasattr(mat,'surface_render_method'):mat.surface_render_method='DITHERED'
-        if key in ('light','green','orange','skylight'):
+        if key in ('light','warm_light','utility_light','green','orange','skylight'):
             p.inputs['Emission Color'].default_value = (*color,1)
-            p.inputs['Emission Strength'].default_value = {'light':5., 'green':.65, 'orange':.4, 'skylight':.18}[key]
+            p.inputs['Emission Strength'].default_value = {'light':5., 'warm_light':4., 'utility_light':3., 'green':.65, 'orange':.4, 'skylight':.18}[key]
+        if key=='skylight':
+            p.inputs['Transmission Weight'].default_value=.72
+            p.inputs['Roughness'].default_value=.55
         M[key] = mat
     # Authored tile maps replace nearly coplanar grout strips, which shimmered
     # at long platform viewing distances. They are packed into the native file.
     for key in ('ceramic','capitolio','mosaic','beige'):
-        mat=M[key].copy();mat.name='L1 architecture / tile_'+key
+        name='L1 architecture / tile_'+key
+        mat=bpy.data.materials.get(name) or bpy.data.materials.new(name)
+        mat.use_nodes=True;mat.node_tree.nodes.clear()
+        p=mat.node_tree.nodes.new('ShaderNodeBsdfPrincipled')
+        p.inputs['Base Color'].default_value=(*palette[key][0],1)
+        p.inputs['Roughness'].default_value=palette[key][1]
+        mat.diffuse_color=(*palette[key][0],1)
+        output=mat.node_tree.nodes.new('ShaderNodeOutputMaterial')
+        mat.node_tree.links.new(p.outputs['BSDF'],output.inputs['Surface'])
         pixels=array('f');color=palette[key][0];width,height=128,64
         name='Metro '+key+' ceramic tile color'
         teximage=bpy.data.images.get(name) or bpy.data.images.new(name,width=width,height=height)
@@ -75,22 +92,27 @@ def _materials():
     image=bpy.data.images.get('Metro rubber flooring stud normals')
     if not image:
         image=bpy.data.images.new('Metro rubber flooring stud normals',width=256,height=256)
-        values=array('f')
-        def height(px,py):
-            xx=(px%16-7.5)/7.5; yy=(py%16-7.5)/7.5
-            r=math.sqrt(xx*xx+yy*yy)
-            return max(0.,1-r*r)**3*.42
-        for py in range(256):
-            for px in range(256):
-                dx=(height(px+1,py)-height(px-1,py))*2
-                dy=(height(px,py+1)-height(px,py-1))*2
-                n=Vector((-dx,-dy,1.)).normalized()
-                values.extend((n.x*.5+.5,n.y*.5+.5,n.z*.5+.5,1.))
-        image.pixels.foreach_set(values);image.colorspace_settings.name='Non-Color';image.pack()
+    # Changing color space AFTER assigning generated pixels resets the buffer
+    # in Blender. Regenerate even existing images to repair old black normals.
+    image.colorspace_settings.name='Non-Color'
+    values=array('f')
+    def height(px,py):
+        xx=(px%16-7.5)/7.5; yy=(py%16-7.5)/7.5
+        r=math.sqrt(xx*xx+yy*yy)
+        return max(0.,1-r*r)**3*.42
+    for py in range(256):
+        for px in range(256):
+            dx=(height(px+1,py)-height(px-1,py))*2
+            dy=(height(px,py+1)-height(px,py-1))*2
+            n=Vector((-dx,-dy,1.)).normalized()
+            values.extend((n.x*.5+.5,n.y*.5+.5,n.z*.5+.5,1.))
+    image.pixels.foreach_set(values);image.pack()
     nodes=M['floor'].node_tree.nodes; links=M['floor'].node_tree.links
     tex=nodes.get('Stud relief texture') or nodes.new('ShaderNodeTexImage');tex.name='Stud relief texture';tex.image=image
     normal=nodes.get('Stud relief') or nodes.new('ShaderNodeNormalMap');normal.name='Stud relief';normal.inputs['Strength'].default_value=.65
     links.new(tex.outputs['Color'],normal.inputs['Color']);links.new(normal.outputs['Normal'],nodes.get('Principled BSDF').inputs['Normal'])
+    from station_materials import finish_materials
+    finish_materials(M,palette)
 
 
 def _collection(name, parent):
@@ -188,27 +210,9 @@ def _track(c, center, a,b):
         _box(c,'pale','Conductor rail insulators',(center+1.29,.12,a+1.5+i*3),(.24,.20,.21))
 
 
-def _route(parent, stops):
-    c=_collection('Linea 1 route',parent)
-    ordered=list(stops.items())
-    _track(c,0,-240,ordered[0][1]-145); _track(c,4,-240,ordered[0][1]-145)
-    for (n,s),(nn,ns) in zip(ordered,ordered[1:]):
-        a,b=s+5,ns-145; _track(c,0,a,b)
-        x0=10 if LAYOUT[n]=='island' else 4; x1=10 if LAYOUT[nn]=='island' else 4
-        if x0==x1: _track(c,x0,a,b)
-        else:
-            # Only the unused return track changes lateral position. This
-            # compressed throat is a game connection, not a surveyed alignment.
-            for i in range(20):
-                t0,t1=i/20,(i+1)/20
-                f=lambda t: x0+(x1-x0)*(t*t*(3-2*t))
-                for off in (-.7175,.7175):
-                    _beam(c,'rail','Compressed return track transition',(f(t0)+off,.125,a+(b-a)*t0),(f(t1)+off,.125,a+(b-a)*t1),.035,8)
-            _box(c,'ballast','Throat bed',(5,-.2,(a+b)/2),(13,.42,b-a))
-    _track(c,0,ordered[-1][1]+5,800); _track(c,10,ordered[-1][1]+5,800)
-
 
 def _cano(c,stop):
+    from station_lighting import fixture_light
     a,b=stop-145,stop+5
     # Square-on-square space frame: every upper node is supported by four
     # diagonals into the lower grid. No dangling trusses or trackside posts.
@@ -232,22 +236,27 @@ def _cano(c,stop):
     for x in (-6.95,10.95):
         for z in [a+2.5+i*10 for i in range(15)]:
             _beam(c,'yellow','Outer steel canopy columns',(x,1.1,z),(x,low,z),.072,12)
-    for x0,x1,mat in ((-7.2,-4.8,'roof'),(-4.8,-3.6,'skylight'),(-3.6,.8,'roof'),(.8,3.2,'skylight'),(3.2,7.6,'roof'),(7.6,8.8,'skylight'),(8.8,11.4,'roof')):
+    for x0,x1,mat in ((-7.2,.4,'roof'),(.4,3.6,'skylight'),(3.6,11.4,'roof')):
         _box(c,mat,'Canopy panels with central daylight strip',((x0+x1)/2,6.40,(a+b)/2),(x1-x0,.08,150))
     for x in [-7.1+i*.46 for i in range(41)]:
         _box(c,'yellow','Roof panel underside seams',(x,6.34,(a+b)/2),(.032,.045,150))
     for x in (-7.13,11.33):
         # Original photo shows deep, open concrete celosía, not flat glazing.
         # Individual vertical/horizontal webs preserve the shadowed apertures.
-        _box(c,'pale','Concrete screen wall base',(x,1.63,(a+b)/2),(.26,1.06,150))
+        for z0,z1 in ((a,stop-84),(stop-79,b)):
+            _box(c,'pale','Concrete screen wall base',(x,1.63,(z0+z1)/2),(.26,1.06,z1-z0))
         for zz in [a+i*.28 for i in range(537)]:
+            if stop-84<zz<stop-79:continue
             _box(c,'pale','Open concrete screen vertical webs',(x,3.32,zz),(.28,2.24,.045))
         for y in [2.2+i*.28 for i in range(9)]:
-            _box(c,'pale','Open concrete screen horizontal webs',(x,y,(a+b)/2),(.28,.045,150))
+            for z0,z1 in ((a,stop-84),(stop-79,b)):
+                _box(c,'pale','Open concrete screen horizontal webs',(x,y,(z0+z1)/2),(.28,.045,z1-z0))
         for zz in [a+i*4.2 for i in range(36)]:
+            if stop-84<zz<stop-79:continue
             _box(c,'concrete','Precast screen bay frame',(x,2.80,zz),(.38,3.40,.20))
         for y in (2.16,4.48):
-            _box(c,'concrete','Precast screen continuous surround',(x,y,(a+b)/2),(.36,.16,150))
+            for z0,z1 in ((a,stop-84),(stop-79,b)):
+                _box(c,'concrete','Precast screen continuous surround',(x,y,(z0+z1)/2),(.36,.16,z1-z0))
         _box(c,'black','Station name fascia over glass blocks',(x,4.64,(a+b)/2),(.26,.58,150))
         for z in (a+18,a+48,a+80,a+116):
             _text(c,'Caño Amarillo',(x+(.14 if x<0 else -.14),4.64,z),.33,'white',math.pi/2 if x<0 else -math.pi/2)
@@ -264,6 +273,7 @@ def _cano(c,stop):
         for z in [a+5+i*10 for i in range(14)]:
             _box(c,'steel','Canopy fluorescent housing',(x,5.14,z),(.40,.09,1.7))
             _box(c,'light','Canopy fluorescent diffuser',(x,5.085,z),(.32,.02,1.55))
+            fixture_light(c,'canopy fluorescent',(x,5.070,z),.32,1.55,65)
     # Deck edge, drainage, rail clips and roof bracket details remain native.
     _box(c,'concrete','Elevated station structural deck',(2,-.61,(a+b)/2),(18.5,.54,150))
     for x in (-6.8,10.8):
@@ -273,45 +283,39 @@ def _cano(c,stop):
     from station_architecture import fascia
     for x in (-4.4,8.4):
         for zz in (a+16,b-18):fascia(c,'PALO VERDE' if x<0 else 'PROPATRIA',x,4.44,zz,4.0,.31,sub='Dirección')
-    # Native Eevee daylight fills the canopy below its opaque roof panels.
-    for z in (a+20,a+65,a+110):
-        data=bpy.data.lights.new('Caño Amarillo diffuse skylight','AREA'); data.energy=500;data.size=12
-        obj=bpy.data.objects.new(data.name,data);c.objects.link(obj);obj.location=(2,6.2,z);obj.rotation_euler=(-math.pi/2,0,0)
 
 
 def _flush():
     for (cname,material,name),(verts,faces,smooth) in _batches.items():
         me=bpy.data.meshes.new(name); me.from_pydata(verts,[],faces);me.materials.append(M[material]);me.update()
-        if material=='floor':
-            uv=me.uv_layers.new(name='World-scale rubber pattern')
-            for loop in me.loops:
-                vertex=me.vertices[loop.vertex_index].co
-                uv.data[loop.index].uv=(vertex.x/.32,vertex.z/.32)
-        elif material.startswith('tile_'):
-            uv=me.uv_layers.new(name='Ceramic modules 320 by 160 mm estimated')
-            for loop in me.loops:
-                vertex=me.vertices[loop.vertex_index].co
-                uv.data[loop.index].uv=(vertex.z/.32,vertex.y/.16)
+        from station_materials import apply_finish_uv, soften_edges
+        apply_finish_uv(me,material)
         for p,s in zip(me.polygons,smooth):p.use_smooth=s
         obj=bpy.data.objects.new(name,me);bpy.data.collections[cname].objects.link(obj)
+        soften_edges(obj,name)
     _batches.clear()
 
 
 def build_environment(stops=None,parent=None):
     stops=stops or STOPS; parent=parent or bpy.context.scene.collection
-    _batches.clear(); _materials(); _route(parent,stops); result={}
+    _batches.clear(); _materials()
+    from tunnel_models import build_route
+    build_route(parent,stops); result={}
     for name,stop in stops.items():
         c=_collection('Station '+name,parent); result[name]=c
         c['referenceBasis']='2012 UrbanRail station photographs and architectural archive; dimensions estimated; see docs/STATION_REFERENCES.md'
         c['referenceEra']='2012 photographic baseline'
         c['platformLayout']=LAYOUT[name]; c['stopPosition']=stop
+        c['platformLength_m']=BY_NAME[name]['platformLength']
+        c['planStatus']=BY_NAME[name]['planStatus']
         a,b=_platform(c,name,stop)
         for center in ((0,10) if LAYOUT[name]=='island' else (0,4)): _track(c,center,a,b)
         if name=='Caño Amarillo':_cano(c,stop)
         else:
             from station_architecture import build_underground
             build_underground(c,name,stop)
-    from station_architecture import altamira_entrance, bellas_entrance
+    from station_architecture import altamira_entrance, bellas_entrance, cano_entrance
+    cano_entrance(parent,stops['Caño Amarillo'])
     altamira_entrance(parent,stops['Altamira'])
     bellas_entrance(parent,stops['Bellas Artes'])
     _flush()

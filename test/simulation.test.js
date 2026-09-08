@@ -61,7 +61,7 @@ test("la ruta jugable conserva el orden oeste–este de las cinco estaciones", (
     stations.map((station) => station.name),
     ["Caño Amarillo", "Capitolio", "Bellas Artes", "Plaza Venezuela", "Altamira"],
   );
-  assert.deepEqual(stations.map((station) => station.distance), [0, 900, 1800, 2800, 3900]);
+  assert.deepEqual(stations.map((station) => station.distance), [0, 510, 1060, 1610, 2160]);
 });
 
 test("sirve las cinco estaciones en orden y completa al cerrar en Altamira", () => {
@@ -139,4 +139,18 @@ test("recuperar no mueve un tren que no ha omitido una parada", () => {
   assert.equal(recovered.position, before.position);
   assert.equal(recovered.score, before.score);
   assert.equal(recovered.missed, false);
+});
+
+test('a missed final stop cannot coast past the modeled route, and recovery still works', () => {
+  const lastLeg = stations.slice(-2);
+  const routeEnd = 2371;
+  const sim = createSimulation(lastLeg,{ routeEnd });
+  sim.start(); finishDwellAndClose(sim);
+  tickFor(sim,180,{ throttle:true });
+  assert.equal(sim.state.missed,true);
+  assert.equal(sim.state.position,routeEnd);
+  assert.equal(sim.state.speed,0);
+  tickFor(sim,20,{ throttle:true });
+  assert.equal(sim.state.position,routeEnd);
+  assert.equal(sim.recover().position,stations.at(-1).distance);
 });
