@@ -17,7 +17,7 @@ if not source: raise RuntimeError('Open the canonical source first')
 build_train()
 interiors = build_interior()
 scene['interior_reference_document'] = 'docs/TRAIN_INTERIOR_REFERENCES.md'
-scene['interior_accuracy_status'] = 'CAF delivery passenger interior from original photos; furniture dimensions estimated, no authenticated interior CAD'
+scene['interior_accuracy_status'] = 'CAF delivery passenger saloons and operator cabs from photographs and equipment guide; furniture dimensions estimated, no authenticated interior CAD'
 bpy.context.view_layer.update()
 camera = scene.objects.get('QA camera')
 camera.location = (.22, 2.57, -1.1)

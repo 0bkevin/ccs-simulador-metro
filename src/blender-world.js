@@ -2,8 +2,10 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { createBlenderLighting, prepareBlenderMeshes } from "./blender-presentation.js";
 import { getStationView } from "./station-views.js";
 import { createTrainInterior } from "./train-interior.js";
+import { createTrainCab } from './train-cab.js';
 import { applyStationCut, createScaleRuler } from './station-inspection.js';
 import { createStationCamera } from './station-camera.js';
+import { createTrainDoors } from './train-doors.js';
 
 /** World adapter for the reviewed Blender export. Coordinates are deliberately
  * untouched: Blender uses Y up and Z along the playable route. */
@@ -28,6 +30,15 @@ export function createWorld(THREE, renderer, stations = [], assets) {
   train.name = "Blender train · 7 cars";
   root.add(train);
   prepareBlenderMeshes(train, renderer);
+  // PCF shadows cannot represent the alpha glazing. Keep it from casting a
+  // solid window-shaped shadow across the passenger saloon or operator desk.
+  train.traverse(object => {
+    if(object.isMesh) {
+      const materials=Array.isArray(object.material)?object.material:[object.material];
+      object.castShadow=materials.some(material=>!material.transparent);
+    }
+  });
+  const doors = createTrainDoors(train);
 
   const cameras = {
     forward: new THREE.PerspectiveCamera(70, 1, 0.05, 1200),
@@ -37,6 +48,7 @@ export function createWorld(THREE, renderer, stations = [], assets) {
     interior: new THREE.PerspectiveCamera(72, 1, .035, 700),
   };
   const interior = createTrainInterior(train, cameras.interior, renderer, assets.manifest);
+  const cab = createTrainCab(train);
   let cameraMode = "platform", inspection = null, revision = 0, activeStation = 0;
   const controls = renderer ? new OrbitControls(cameras.inspection, renderer.domElement) : null;
   const cameraGuard = createStationCamera({ camera: cameras.inspection, controls, environment });
@@ -86,8 +98,10 @@ export function createWorld(THREE, renderer, stations = [], assets) {
     lighting.focus(cameras.inspection.position, inspection.collection);
     revision++;
   }
-  function update(_dt = 0.016, distance = 0) {
+  function update(_dt = 0.016, distance = 0, state = {}) {
     train.position.set(0, 0, Number(distance) || 0);
+    doors.update(_dt, state);
+    cab.update(state,doors.fraction);
     const z = train.position.z;
     cameras.forward.position.set(0, 2.5, z + 5.0);
     cameras.forward.lookAt(0, 2, z + 15);
@@ -119,7 +133,8 @@ export function createWorld(THREE, renderer, stations = [], assets) {
       const target = activeCamera().position.clone();
       const litStation = stations.find(stop => target.z >= stop.distance - 145 && target.z <= stop.distance + 5);
       const tunnelIndex = Math.max(0, stations.findLastIndex(stop => target.z > stop.distance + 5));
-      lighting.focus(target, litStation?.collection || `Tunnel ${stations[tunnelIndex].id}`);
+      const saloon = cameraMode === 'interior' && !['operator','cab-seat'].includes(interior.state.view);
+      lighting.focus(target, litStation?.collection || `Tunnel ${stations[tunnelIndex].id}`, false, false, saloon);
     }
   }
   function resize(width, height) {
@@ -140,17 +155,18 @@ export function createWorld(THREE, renderer, stations = [], assets) {
       if (object.geometry) object.geometry.dispose();
       if (object.material?.dispose) object.material.dispose();
     });
-    controls?.dispose(); cameraGuard.dispose(); lighting.dispose(); interior.dispose(); scaleRuler.dispose();
+    controls?.dispose(); cameraGuard.dispose(); lighting.dispose(); interior.dispose(); cab.dispose(); scaleRuler.dispose();
   }
   return {
     scene, root, train, cameras,
     get camera() { return activeCamera(); },
     get inspection() { return inspection; },
     get activeStation() { return activeStation; },
-    get renderRevision() { return revision + interior.revision; },
-    get doorFraction() { return 0; },
+    get renderRevision() { return revision + interior.revision + doors.revision + cab.revision; },
+    get doorFraction() { return doors.fraction; },
+    doors,
     setCameraMode, inspectStation, leaveInspection, moveTunnel, update, resize, dispose, controls,
-    stationAssemblies, railPaths: [], lighting, interior, cameraGuard,
+    stationAssemblies, railPaths: [], lighting, interior, cab, cameraGuard,
     assetSource: assets.source,
     manifest: assets.manifest,
   };

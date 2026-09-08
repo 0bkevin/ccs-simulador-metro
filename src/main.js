@@ -4,6 +4,7 @@ import stationResearchText from "../docs/STATION_REFERENCES.md?raw";
 import stationAccuracyText from "../docs/STATION_ACCURACY_REVIEW.md?raw";
 import { stationMetrics } from "./station-inspection.js";
 import blenderReferenceText from "../docs/BLENDER_REFERENCE_REBUILD.md?raw";
+import exteriorReferenceText from "../docs/EXTERIOR_MODEL.md?raw";
 import stations, { lineInfo } from "./route.js";
 import { createWorld } from "./blender-world.js";
 import { loadBlenderAssets } from "./blender-assets.js";
@@ -68,7 +69,7 @@ ui.innerHTML = `
 <div class="toast" id="toast"></div>
 <div class="overlay" id="intro"><div class="card"><div class="corner">SIMULADOR 01 / CABINA</div><div class="eyebrow">Servicio de pasajeros · turno mañana</div><h1>Línea 1<br>en marcha.</h1><p>Conduce el tren desde Caño Amarillo hasta Altamira. Detente dentro de la zona de parada, abre puertas durante tres segundos y continúa.</p><button class="start" id="start">Abrir cabina</button><button class="secondary" id="inspectIntro">INSPECCIONAR TREN</button><button class="secondary" id="inspectStationsIntro">INSPECCIONAR ESTACIONES</button><p class="fine">Cinco estaciones, andenes de 150 m y túneles para conducir. Recorrido abreviado de 2,16 km. La línea histórica completa tiene ${lineInfo.realStationCount} estaciones.</p></div></div>
 <div class="overlay" id="complete" style="display:none"><div class="card"><div class="eyebrow">Servicio finalizado</div><h1>Altamira</h1><p>Has servido las ${data.length} estaciones de este recorrido.</p><p class="scoreline">Puntuación <strong id="finalScore">100</strong></p><button class="start" id="restart">REINICIAR SERVICIO</button><button class="secondary" id="completeSources">VER FUENTES</button></div></div>
-<div class="overlay" id="sourceModal" style="display:none"><div class="card source-card"><button class="corner" id="closeSources">CERRAR ×</button><div class="eyebrow">Documentación</div><h1>Fuentes</h1><p>Investigación sobre diseño, estaciones, trenes y mecánica de la Línea 1. Fuentes primarias consultadas:</p><div class="source-links"><a href="https://openjicareport.jica.go.jp/pdf/11789237_03.pdf" target="_blank" rel="noreferrer">JICA · datos de línea</a><a href="https://www.aschinfraestructuras.com/linea-caracas" target="_blank" rel="noreferrer">ASCH · rehabilitación de vía</a><a href="https://admin.cafmobility.com/uploads/281_CAF_Catalogo_General_ES_601604d06c.pdf" target="_blank" rel="noreferrer">CAF · catálogo</a><a href="https://www.alstom.com/fr/press-releases-news/2005/9/ALSTOM-remporte-un-contrat-cle-en-main-pour-le-Metro-de-Caracas-au-Venezuela-20050916" target="_blank" rel="noreferrer">Alstom · Metro de Caracas</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery1.htm" target="_blank" rel="noreferrer">UrbanRail · Altamira y Bellas Artes</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery2.htm" target="_blank" rel="noreferrer">UrbanRail · Capitolio</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery4.htm" target="_blank" rel="noreferrer">UrbanRail · Plaza Venezuela</a><a href="https://fundaayc.com/2024/07/14/algo-mas-sobre-la-postal-no-411/" target="_blank" rel="noreferrer">Fundación Arquitectura y Ciudad · Altamira</a><a href="https://recyt.fecyt.es/index.php/CyTET/article/download/83795/61863/276024" target="_blank" rel="noreferrer">Bemergui · arquitectura de estaciones</a></div><p><small>La grabación real es una referencia externa. El audio del juego es procedural; no se redistribuye la grabación.</small></p><button class="secondary" id="realListen">ESCUCHAR REFERENCIA REAL CAF/ALSTOM</button><iframe id="realFrame" title="Referencia real del Metro de Caracas" style="display:none;width:100%;aspect-ratio:16/9;border:0;margin-top:1rem" allow="autoplay; encrypted-media" allowfullscreen></iframe><div id="audioSources"></div><pre id="researchText"></pre><pre id="stationResearchText"></pre></div></div>`;
+<div class="overlay" id="sourceModal" style="display:none"><div class="card source-card"><button class="corner" id="closeSources">CERRAR ×</button><div class="eyebrow">Documentación</div><h1>Fuentes</h1><p>Investigación sobre diseño, estaciones, trenes y mecánica de la Línea 1. Fuentes primarias consultadas:</p><div class="source-links"><a href="https://openjicareport.jica.go.jp/pdf/11789237_03.pdf" target="_blank" rel="noreferrer">JICA · datos de línea</a><a href="https://www.aschinfraestructuras.com/linea-caracas" target="_blank" rel="noreferrer">ASCH · rehabilitación de vía</a><a href="https://admin.cafmobility.com/uploads/281_CAF_Catalogo_General_ES_601604d06c.pdf" target="_blank" rel="noreferrer">CAF · catálogo</a><a href="https://www.revistaitransporte.es/wp-content/uploads/2016/02/2013_49.pdf" target="_blank" rel="noreferrer">INECO · tren CAF y rehabilitación</a><a href="https://www.alstom.com/fr/press-releases-news/2005/9/ALSTOM-remporte-un-contrat-cle-en-main-pour-le-Metro-de-Caracas-au-Venezuela-20050916" target="_blank" rel="noreferrer">Alstom · Metro de Caracas</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery1.htm" target="_blank" rel="noreferrer">UrbanRail · Altamira y Bellas Artes</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery2.htm" target="_blank" rel="noreferrer">UrbanRail · Capitolio</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery4.htm" target="_blank" rel="noreferrer">UrbanRail · Plaza Venezuela</a><a href="https://fundaayc.com/2024/07/14/algo-mas-sobre-la-postal-no-411/" target="_blank" rel="noreferrer">Fundación Arquitectura y Ciudad · Altamira</a><a href="https://recyt.fecyt.es/index.php/CyTET/article/download/83795/61863/276024" target="_blank" rel="noreferrer">Bemergui · arquitectura de estaciones</a></div><p><small>La grabación real es una referencia externa. El audio del juego es procedural; no se redistribuye la grabación.</small></p><button class="secondary" id="realListen">ESCUCHAR REFERENCIA REAL CAF/ALSTOM</button><iframe id="realFrame" title="Referencia real del Metro de Caracas" style="display:none;width:100%;aspect-ratio:16/9;border:0;margin-top:1rem" allow="autoplay; encrypted-media" allowfullscreen></iframe><div id="audioSources"></div><pre id="researchText"></pre><pre id="stationResearchText"></pre></div></div>`;
 app.append(ui);
 const stationPanel = document.createElement("section");
 stationPanel.className = "station-review-ui in-game-stations";
@@ -89,7 +90,7 @@ data.forEach((station, index) => {
 $("researchText").textContent = researchText;
 $("stationResearchText").textContent = stationAccuracyText + "\n\n" + stationResearchText;
 const modelResearch = document.createElement('pre');
-modelResearch.textContent = blenderReferenceText;
+modelResearch.textContent = `${exteriorReferenceText}\n\n${blenderReferenceText}`;
 $("stationResearchText").before(modelResearch);
 const referencePhoto = document.createElement('a');
 referencePhoto.href = 'https://commons.wikimedia.org/wiki/File:Metro_de_caracas_linea_1.jpg';
@@ -173,7 +174,7 @@ $("gameTunnelTravel").oninput = event => {
 const interiorPanel = document.createElement("section");
 interiorPanel.className = "interior-controls"; interiorPanel.hidden = true;
 interiorPanel.setAttribute("aria-label", "Interior del tren");
-interiorPanel.innerHTML = `<div class="route-label">Salón de pasajeros · CAF</div><label>COCHE <select id="interiorCar" aria-label="Coche del tren"></select></label><div class="interior-presets"><button data-interior-view="saloon">SALÓN</button><button data-interior-view="seats">ASIENTOS</button><button data-interior-view="doors">PUERTAS</button><button data-interior-view="gangway">INTERCONEXIÓN</button></div><label>RECORRER COCHE <input id="interiorTravel" type="range" min="-9.6" max="7.6" step=".01" value="6.63" aria-label="Posición dentro del coche"></label><p>Arrastra para mirar alrededor.<br>W / S siguen controlando el tren.</p>`;
+interiorPanel.innerHTML = `<div class="route-label">Interior · CAF Serie 6</div><label>COCHE <select id="interiorCar" aria-label="Coche del tren"></select></label><div class="interior-presets"><button data-interior-view="saloon">SALÓN</button><button data-interior-view="seats">ASIENTOS</button><button data-interior-view="doors">PUERTAS</button><button data-interior-view="gangway">INTERCONEXIÓN</button><button data-interior-view="operator">PUESTO DEL OPERADOR</button><button data-interior-view="cab-seat">ASIENTO DEL OPERADOR</button></div><label id="interiorTravelLabel">RECORRER COCHE <input id="interiorTravel" type="range" min="-9.6" max="7.6" step=".01" value="6.63" aria-label="Posición dentro del coche"></label><p>Arrastra para mirar alrededor.<br>W / S controlan el tren · E abre o cierra puertas.</p>`;
 ui.append(interiorPanel);
 for (let index = 1; index <= 7; index++) {
   const option = document.createElement("option"); option.value = index;
@@ -182,6 +183,8 @@ for (let index = 1; index <= 7; index++) {
 }
 function interiorPreset(kind = "saloon") {
   world.interior.select(Number($("interiorCar").value), kind);
+  $("interiorCar").value = world.interior.state.carIndex;
+  $("interiorTravelLabel").hidden = ['operator','cab-seat'].includes(kind);
   $("interiorTravel").value = world.interior.state.travel;
   interiorPanel.querySelectorAll("[data-interior-view]").forEach(button => {
     button.classList.toggle("active", button.dataset.interiorView === kind);
@@ -226,7 +229,9 @@ function toggleDoors() {
   const old = sim.state;
   const next = sim.toggleDoors();
   if (old.doorsOpen !== next.doorsOpen)
-    toast(next.doorsOpen ? "Puertas abiertas" : "Puertas cerradas");
+    toast(next.doorsOpen ? "Abriendo puertas del andén" : "Cerrando puertas");
+  else if (old.paused) toast("Continúa el servicio para accionar las puertas");
+  else if (old.speed > .04) toast("Detén el tren para abrir las puertas");
   else if (old.dwell > 0) toast("Espera el embarque");
   else toast("Fuera de zona de parada");
 }
@@ -420,6 +425,7 @@ function update(now) {
   if (state.speed <= 0.01) emergency = false;
   world.update(state.paused ? 0 : dt, state.position, {
     doorsOpen: state.doorsOpen,
+    doorSide: state.doorSide,
     speed: state.speed,
     throttle,
     brake,
@@ -444,9 +450,9 @@ function update(now) {
       : state.doorsOpen
         ? `EMBARQUE · ${Math.ceil(state.dwell)} s`
         : `${Math.max(0, Math.round((target?.distance || 0) - state.position))} m · ${state.score} PTS`;
-  $("doors").textContent = state.doorsOpen
-    ? "PUERTAS ABIERTAS"
-    : "PUERTAS CERRADAS";
+  $("doors").textContent = world.doors.moving
+    ? (state.doorsOpen ? "ABRIENDO PUERTAS…" : "CERRANDO PUERTAS…")
+    : (state.doorsOpen ? "CERRAR PUERTAS · E" : "ABRIR PUERTAS · E");
   $("pause").textContent = state.paused ? "CONTINUAR" : "PAUSA";
   $("recover").style.display = state.missed ? "" : "none";
   const mode = state.paused
@@ -480,11 +486,12 @@ function update(now) {
   requestAnimationFrame(update);
 }
 
-if (new URLSearchParams(location.search).get("view") === "interior") {
-  selectCamera(3); interiorPreset();
+if (['interior','operator'].includes(new URLSearchParams(location.search).get("view"))) {
+  selectCamera(3); interiorPreset(new URLSearchParams(location.search).get('view') === 'operator' ? 'operator' : 'saloon');
 }
 world.update(0, sim.state.position, {
   doorsOpen: sim.state.doorsOpen,
+  doorSide: sim.state.doorSide,
   speed: sim.state.speed,
 });
 renderer.render(world.scene, world.camera);

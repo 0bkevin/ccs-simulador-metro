@@ -68,7 +68,7 @@ export function createBlenderLighting(scene, renderer, manifest) {
   });
   const direction = new THREE.Vector3();
   const smooth = t => { t = THREE.MathUtils.clamp(t, 0, 1); return t * t * (3 - 2 * t); };
-  function focus(target, collection, exterior = false, drawing = false) {
+  function focus(target, collection, exterior = false, drawing = false, saloon = false) {
     const tunnel = collection?.startsWith('Tunnel ');
     const daylight = exterior || collection === 'Station Caño Amarillo' || drawing;
     scene.background.set(daylight ? 0x18212a : 0x060808);
@@ -76,6 +76,13 @@ export function createBlenderLighting(scene, renderer, manifest) {
     key.intensity = daylight ? 1.8 : 0;
     fill.intensity = daylight ? .22 : 0;
     scene.environmentIntensity = daylight ? .35 : tunnel ? .045 : .15;
+    // The saloon is enclosed. Unshadowed platform sources and the studio
+    // environment otherwise wash through its roof and flatten the interior.
+    const enclosureGain = saloon ? .4 : 1;
+    ambient.intensity *= enclosureGain;
+    key.intensity *= enclosureGain;
+    fill.intensity *= enclosureGain;
+    scene.environmentIntensity *= saloon ? .5 : 1;
     key.target.position.copy(target);
     key.position.copy(target).add(new THREE.Vector3(-18, 28, -12));
     const nearby = drawing ? [] : sources.filter(data => {
@@ -99,13 +106,13 @@ export function createBlenderLighting(scene, renderer, manifest) {
       light.color.fromArray(data.color);
       // Exposure calibration, not a conversion to surveyed lux or lamp watts.
       const fade = 1 - smooth((distance - radius * .78) / (radius * .22));
-      light.intensity = data.power * .30 * fade / (data.width * data.height);
+      light.intensity = data.power * .30 * fade * enclosureGain / (data.width * data.height);
       light.userData.sourceFixture = data.fixtureId; light.userData.sourceCollection = data.collection;
       light.userData.sourcePower = data.power;
     });
     shadowLights.forEach((light, i) => {
       const area = fixtureLights[i];
-      light.intensity = area.userData.sourceFixture ? area.userData.sourcePower * .10 : 0;
+      light.intensity = area.userData.sourceFixture ? area.userData.sourcePower * .10 * enclosureGain : 0;
       light.position.copy(area.position); light.color.copy(area.color);
       direction.set(0, 0, -1).applyQuaternion(area.quaternion);
       light.target.position.copy(area.position).add(direction);

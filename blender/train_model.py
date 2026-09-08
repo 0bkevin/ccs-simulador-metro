@@ -17,7 +17,7 @@ from mathutils import Vector, Matrix
 from mathutils.geometry import delaunay_2d_cdt
 from body_geometry import (body_width, body_slope, body_section_for_cab, roof_height,
     BODY_HALF_LENGTH, BOGIE_HALF_SPACING, CAR_PITCH, CAB_JOIN, CAB_SHIFT,
-    DOOR_WIDTH, DOOR_HEIGHT, DOOR_CENTRES)
+    DOOR_WIDTH, DOOR_HEIGHT, door_centres, saloon_bay_centres)
 
 
 def _material(name, color, metallic=0.0, roughness=0.45, emission=None):
@@ -37,7 +37,8 @@ def _material(name, color, metallic=0.0, roughness=0.45, emission=None):
 def _materials():
     materials = {
         "silver": _material("CAF 2010 brushed aluminium", (.52, .55, .55), .62, .32),
-        "silver_light": _material("CAF rounded silver shoulder", (.75, .77, .74), .66, .22),
+        "silver_light": _material("CAF rounded silver shoulder", (.75, .77, .74), .32, .26),
+        "white_paint": _material("CAF white printed markings", (.86, .87, .85), 0, .34),
         "silver_dark": _material("CAF lower apron shadow", (.33, .36, .35), .70, .29),
         "red": _material("CAF delivery red", (.62, .008, .006), .0, .30),
         "red_dark": _material("CAF red edge shadow", (.46, .008, .005), .10, .38),
@@ -56,12 +57,27 @@ def _materials():
         "steel_light": _material("CAF machined bogie edges", (.38, .40, .38), .80, .20),
         "rubber": _material("CAF wheel rubber", (.009, .011, .012), .02, .74),
         "copper": _material("CAF coupler machined metal", (.30, .30, .27), .73, .27),
+        "coupler_face": _material("CAF coupler satin machined face", (.36, .37, .34), .78, .38),
+        "coupler_cast": _material("CAF coupler dark cast steel", (.027, .032, .031), .72, .43),
+        "coupler_blue": _material("CAF coupler blue control hose", (.018, .15, .28), .0, .46),
     }
     glass = _material('CAF passenger transparent glazing', (.16, .25, .28), .05, .16)
     glass.diffuse_color = (.16, .25, .28, .24)
     glass.node_tree.nodes.get('Principled BSDF').inputs['Alpha'].default_value = .24
     glass.surface_render_method = 'DITHERED'
     materials['passenger_glass'] = glass
+    # Dielectric laminated glass: the former opaque, metallic blue material
+    # hid the cab and read as a painted panel instead of bonded glazing.
+    cab_glass = _material('CAF clear laminated cab glazing', (.18, .23, .25), 0, .10)
+    cab_glass.diffuse_color = (.18, .23, .25, .28)
+    bsdf = cab_glass.node_tree.nodes.get('Principled BSDF')
+    bsdf.inputs['Alpha'].default_value = .28
+    bsdf.inputs['IOR'].default_value = 1.52
+    bsdf.inputs['Coat Weight'].default_value = .85
+    bsdf.inputs['Coat Roughness'].default_value = .06
+    cab_glass.surface_render_method = 'DITHERED'
+    materials['cab_glass'] = cab_glass
+    materials['frit'] = _material('CAF black ceramic glass border', (.007, .009, .009), 0, .13)
     return materials
 
 
@@ -224,13 +240,15 @@ def _loft_shell(center_z, direction, collection, mats, cab):
     shell=_mesh('CAF extruded aluminium body section',verts,faces,mats['silver'],collection,smooth=True)
     # Actual openings through the original loft. One disjoint cutter includes
     # every passenger/door window and crosses both sides of the body.
-    openings=[(u,1.672) for u in (-4.666,0,4.666)]
+    openings=[(u,1.672) for u in saloon_bay_centres(cab)]
     openings += [(u,.702) for u in ((-8.73,) if cab else (-8.73,8.73))]
-    openings += [(u+leaf,.520) for u in DOOR_CENTRES for leaf in (-.442,.442)]
+    apertures=[_rounded_rect(center_z+direction*u-w/2+.009,
+        center_z+direction*u+w/2-.009,2.204,3.026,.061,8) for u,w in openings]
+    # Doors require a full-height hole through the body, not two window holes.
+    apertures += [_rounded_rect(center_z+direction*u-DOOR_WIDTH/2,
+        center_z+direction*u+DOOR_WIDTH/2,1.06,1.06+DOOR_HEIGHT,.045,8) for u in door_centres(cab)]
     cutverts=[];cutfaces=[]
-    for u,w in openings:
-        z=center_z+direction*u
-        loop=_rounded_rect(z-w/2+.009,z+w/2-.009,2.204,3.026,.061,8)
+    for loop in apertures:
         start=len(cutverts);count=len(loop)
         cutverts.extend((x,y,zz) for x in (-1.9,1.9) for zz,y in loop)
         cutfaces.extend([tuple(start+i for i in range(count)),tuple(start+count+i for i in reversed(range(count)))])
@@ -245,8 +263,8 @@ def _loft_shell(center_z, direction, collection, mats, cab):
     bm = bmesh.new()
     bm.from_mesh(shell.data)
     false_caps = [f for f in bm.faces
-                  if min(v.co.y for v in f.verts) >= 2.193
-                  and max(v.co.y for v in f.verts) <= 3.037
+                  if min(v.co.y for v in f.verts) >= 1.049
+                  and max(v.co.y for v in f.verts) <= 3.094
                   and min(v.co.x for v in f.verts) < -.2
                   and max(v.co.x for v in f.verts) > .2]
     bmesh.ops.delete(bm, geom=false_caps, context='FACES')
@@ -254,6 +272,13 @@ def _loft_shell(center_z, direction, collection, mats, cab):
     bm.free()
     shell.data.update()
     bpy.data.objects.remove(cutter,do_unlink=True)
+    normals=[]
+    for vertex in shell.data.vertices:
+        x,y,z=vertex.co
+        if abs(x)>.8 and .86<y<3.40:
+            normals.append(tuple(Vector((math.copysign(1,x),-body_slope(y),0)).normalized()))
+        else:normals.append(tuple(vertex.normal))
+    shell.data.normals_split_custom_set_from_vertices(normals)
     # Flat end diaphragms have independent normals; smoothing a large end
     # cap into the side was producing the earlier long triangular highlights.
     for u in ((-BODY_HALF_LENGTH,) if cab else (-BODY_HALF_LENGTH,BODY_HALF_LENGTH)):
@@ -319,22 +344,41 @@ def _side_logo(side,y,z,collection,mats):
     _tube('CAF Metro logo silver arch',arc,.007,mats['silver_dark'],collection)
 
 
-def _door_leaf(name, center_z, direction, side, local_u, leaf_offset, collection, mats):
+def _door_leaf(name, center_z, direction, side, local_u, leaf_offset, collection, mats, bay):
     route_center = center_z + direction * (local_u + leaf_offset)
+    before=set(collection.objects)
     _side_surface(name,side,1.06,1.06+DOOR_HEIGHT,route_center-.434,route_center+.434,mats['red'],collection,.014,.050,
         holes=[(route_center-.253,route_center+.253,2.202,3.028,.063)])
     _side_window(f'{name} inset window',center_z,direction,side,local_u+leaf_offset,.520,2.195,3.035,collection,mats)
     _side_text('CAF door warning','NO APOYARSE',side,1.96,route_center,.025,mats['silver_light'],collection,.035)
+    # Meeting seals and edge returns move with their leaf, leaving a clear
+    # opening. Native parent metadata survives material batching on export.
+    edge_z=route_center-direction*math.copysign(.434,leaf_offset)
+    _side_surface('CAF moving door meeting seal',side,1.065,3.078,edge_z-.006,edge_z+.006,mats['black'],collection,.035,.001)
+    for edge in (-.430,.430):
+        _side_surface('CAF door folded edge return',side,1.075,3.065,route_center+edge-.006,route_center+edge+.006,mats['red_dark'],collection,-.018,.002)
+    car=int(collection.name[-2:])
+    local_leaf=1 if leaf_offset>0 else -1
+    assembly=bpy.data.objects.new(f'CAF door {car:02d} {side:+d} {bay} {local_leaf:+d}',None)
+    collection.objects.link(assembly)
+    assembly['doorId']=f'{car:02d}:{side}:{bay}:{local_leaf}'
+    assembly['doorSide']=side
+    assembly['doorCentreLocal']=local_u
+    assembly['doorTravelZ']=direction*local_leaf*.895
+    assembly['doorTravelX']=side*.115
+    for obj in set(collection.objects)-before-{assembly}:
+        obj.parent=assembly
+    return assembly
 
 
 def _side_details(center_z, direction, side, collection, mats, driving=False):
-    for door_index, local_u in enumerate(DOOR_CENTRES, 1):
+    doors=door_centres(driving)
+    for door_index, local_u in enumerate(doors, 1):
         route_center=center_z+direction*local_u
         _side_surface('CAF recessed door portal',side,1.02,3.125,route_center-.91,route_center+.91,mats['black'],collection,.006,.065,
-            holes=[(route_center+leaf-.253,route_center+leaf+.253,2.202,3.028,.063) for leaf in (-.442,.442)])
+            holes=[(route_center-DOOR_WIDTH/2,route_center+DOOR_WIDTH/2,1.06,1.06+DOOR_HEIGHT,.045)])
         for leaf_offset in (-.442, .442):
-            _door_leaf(f"CAF paired door {door_index:02d} leaf", center_z, direction, side, local_u, leaf_offset, collection, mats)
-        _side_surface('CAF meeting stile',side,1.06,3.085,route_center-.006,route_center+.006,mats['black'],collection,.035,.001)
+            _door_leaf(f"CAF paired door {door_index:02d} leaf", center_z, direction, side, local_u, leaf_offset, collection, mats, door_index)
         # Separate guides and thresholds, visible in the platform-side photo.
         _box('CAF grooved aluminium threshold',(side*(body_width(1.04)+.025),1.035,route_center),(.115,.042,1.79),mats['silver_dark'],collection,.010)
         for off in (-.026,.006,.036):
@@ -343,7 +387,7 @@ def _side_details(center_z, direction, side, collection, mats, driving=False):
         for edge in (-.85,.85):
             _side_text('CAF door number',str(door_index),side,3.19,route_center+edge,.035,mats['black_soft'],collection,.035)
 
-    for window_index, local_u in enumerate((-4.666, 0.0, 4.666), 1):
+    for window_index, local_u in enumerate(saloon_bay_centres(driving), 1):
         _side_window(f"CAF passenger window {window_index:02d}",center_z,direction,side,local_u,1.672,2.195,3.035,collection,mats)
         _side_logo(side,1.79,center_z+direction*local_u,collection,mats)
     for local_u in ((-8.73,) if driving else (-8.73,8.73)):
@@ -356,8 +400,8 @@ def _side_details(center_z, direction, side, collection, mats, driving=False):
     for u in (-9.8,-5.0,0,5.0,7.95):
         if u>fascia_end:continue
         _cylinder('CAF upper fascia countersunk fixing',(side*(body_width(3.355)+.019),3.355,center_z+direction*u),.014,.006,mats['silver_dark'],collection,rotation=(0,math.pi/2,0),vertices=12)
-    panel_intervals=[(-10.17,-7.94),(-6.06,-3.273),(-1.393,1.393),(3.273,6.06)]
-    if not driving:panel_intervals.append((7.94,10.17))
+    panel_intervals=[(-10.17,doors[0]-.94)]+[(a+.94,b-.94) for a,b in zip(doors,doors[1:])]
+    panel_intervals.append((doors[-1]+.94,CAB_JOIN if driving else 10.17))
     for start_u, end_u in panel_intervals:
         z0=center_z+direction*start_u;z1=center_z+direction*end_u
         for colour,y in (('red',1.43),('yellow',1.365),('green',1.30),('blue',1.235)):
@@ -480,6 +524,7 @@ def _car(index, center_z, direction, driving, mats):
     collection["underframe_length_m"] = 20.4735 if driving else 20.460
     collection["bogie_pivot_spacing_m"] = 15.250
     collection["door_opening_m"] = "1.750 x 2.0225"
+    collection['door_centres_local_m']=list(door_centres(driving))
     collection["car_pitch_estimate_m"] = CAR_PITCH
     collection["body_width_m"] = 3.0
     collection["body_roof_m"] = 3.75

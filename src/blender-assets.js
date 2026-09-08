@@ -6,7 +6,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
  * Keeping manifest validation here makes a missing/stale export visible to the
  * user instead of silently switching to the former procedural scene.
  */
-export async function loadBlenderAssets({ base = "/models/blender", onProgress, includeTrain = true } = {}) {
+export async function loadBlenderAssets({ base = "/models/blender", onProgress, includeTrain = true, includeEnvironment = true } = {}) {
   const manifestUrl = `${base.replace(/\/$/, "")}/manifest.json`;
   const manifestResponse = await fetch(manifestUrl, { cache: "no-store" });
   if (!manifestResponse.ok) throw new Error(`No se pudo cargar ${manifestUrl} (${manifestResponse.status})`);
@@ -30,12 +30,12 @@ export async function loadBlenderAssets({ base = "/models/blender", onProgress, 
   });
   const [train, environment] = await Promise.all([
     includeTrain ? load(trainPath, "tren Blender") : Promise.resolve(null),
-    load(environmentPath, "entorno Blender"),
+    includeEnvironment ? load(environmentPath, "entorno Blender") : Promise.resolve(null),
   ]);
   return {
     manifest,
     train: train?.scene ?? null,
-    environment: environment.scene,
+    environment: environment?.scene ?? null,
     source: `Blender · ${manifest.source.sha256}`,
   };
 }

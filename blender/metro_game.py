@@ -53,9 +53,10 @@ def train_root():
     root.empty_display_type = "PLAIN_AXES"
     root.empty_display_size = 2.0
     for collection in bpy.data.collections:
-        if not collection.name.startswith("CAF car "):
+        if not collection.name.startswith(("CAF car ", "CAF interior ")):
             continue
         for obj in list(collection.objects):
+            if obj.parent and obj.parent.get('doorId'): continue
             world = obj.matrix_world.copy()
             obj.parent = root
             obj.matrix_world = world
@@ -98,6 +99,7 @@ class METRO_OT_play(bpy.types.Operator):
         if self._timer:
             return {"CANCELLED"}
         self.root = train_root()
+        self.door_leaves=[o for o in context.scene.objects if o.type=='EMPTY' and o.get('doorId')]
         self.camera = setup_camera(self.root)
         self.reset_state(context.scene)
         self._timer = context.window_manager.event_timer_add(.033, window=context.window)
@@ -110,12 +112,15 @@ class METRO_OT_play(bpy.types.Operator):
         self.distance = 0.0
         self.station_index = 0
         self.doors_open = True
+        self.door_side = -1
+        self.door_fractions = {-1: 1., 1: 0.}
         self.paused = False
         self.throttle = False
         self.brake = False
         self.serviced = 0
         self.missed = False
         self.root.location = (0, 0, 0)
+        self.update_doors(0)
         self.update_camera()
         status(scene, "Caño Amarillo · puertas abiertas · pulsa E para cerrar y salir")
 
@@ -136,7 +141,8 @@ class METRO_OT_play(bpy.types.Operator):
     def tick(self, scene, dt):
         if self.paused:
             return
-        if self.throttle and not self.doors_open and not self.missed:
+        self.update_doors(dt)
+        if self.throttle and not self.doors_open and max(self.door_fractions.values())<.001 and not self.missed:
             self.speed = min(MAX_SPEED, self.speed + 4.0 * dt)
         elif self.brake:
             self.speed = max(0.0, self.speed - 8.0 * dt)
@@ -162,6 +168,18 @@ class METRO_OT_play(bpy.types.Operator):
         if self.station_index == len(ROUTE) - 1 and self.serviced >= len(ROUTE) and self.distance >= ROUTE[-1][1] - STOP_ZONE:
             status(scene, "SERVICIO COMPLETO · Altamira · pulsa R para otro recorrido")
 
+    def update_doors(self,dt):
+        def ease(t):
+            t=max(0,min(1,t));return t*t*(3-2*t)
+        for side in (-1,1):
+            target=1. if self.doors_open and self.door_side==side else 0.
+            old=self.door_fractions[side]
+            self.door_fractions[side]=old+math.copysign(min(abs(target-old),dt/(2.4 if target else 2.8)),target-old)
+        for leaf in self.door_leaves:
+            t=self.door_fractions[leaf['doorSide']]
+            leaf.location.x=leaf['doorTravelX']*ease(t/.14)
+            leaf.location.z=leaf['doorTravelZ']*ease((t-.14)/.86)
+
     def modal(self, context, event):
         if event.type == "TIMER":
             self.tick(context.scene, .033)
@@ -172,7 +190,7 @@ class METRO_OT_play(bpy.types.Operator):
             elif event.type in {"S", "DOWN_ARROW"}:
                 self.brake = True
             elif event.type == "E":
-                if self.speed < .15 and self.near_station() and not self.missed:
+                if not self.paused and self.speed < .04 and self.near_station() and not self.missed:
                     if self.doors_open:
                         self.doors_open = False
                         self.serviced += 1
@@ -181,6 +199,7 @@ class METRO_OT_play(bpy.types.Operator):
                         status(context.scene, f"{self.station_name()} · puertas cerradas · W/↑ para tracción")
                     else:
                         self.doors_open = True
+                        self.door_side = 1 if self.station_name() in ('Bellas Artes','Altamira') else -1
                         status(context.scene, f"{self.station_name()} · puertas abiertas")
             elif event.type == "P":
                 self.paused = not self.paused

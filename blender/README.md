@@ -26,8 +26,8 @@ mientras que el juego presenta las mallas y materiales 3D de ese mismo `.blend`.
 
 El navegador no ejecuta Blender Game Engine: sólo presenta la geometría GLB y
 la lógica de simulación WebGL. La geometría es una aproximación visual y no una
-reconstrucción medida 1:1. El export actual no incluye animaciones de puertas o
-ruedas. Las páginas de revisión se sirven en `http://localhost:5173/` durante
+reconstrucción medida 1:1. Las hojas de puerta se exportan como ensamblajes independientes y se animan
+por comando en la web y el controlador nativo. Las ruedas siguen estáticas. Las páginas de revisión se sirven en `http://localhost:5173/` durante
 desarrollo; no se abre ningún túnel público.
 
 ## Interior de pasajeros
@@ -36,7 +36,10 @@ INTERIOR DEL TREN entra al salón dentro del juego. Selecciona uno de los siete
 coches, arrastra para mirar o utiliza SALÓN, ASIENTOS, PUERTAS e INTERCONEXIÓN.
 El deslizador recorre el coche; W/S conservan tracción y freno. El interior usa
 los mismos coches en movimiento y permite ver las estaciones por las ventanas.
-Se reconstruyen salones de pasajeros; el puesto del conductor queda pendiente.
+PUESTO DEL OPERADOR y ASIENTO DEL OPERADOR muestran las cabinas de los coches
+1 y 7. El pupitre, el asiento y sus equipos siguen fotografías de entrega y
+el diagrama de equipos Serie 6. Los indicadores representan el estado del
+simulador; no implementan el sistema CBTC/COSMOS real.
 Fotos, cotas disponibles y estimaciones: `../docs/TRAIN_INTERIOR_REFERENCES.md`.
 
 `rebuild_train.py` reconstruye exterior e interior conservando las estaciones:
@@ -47,9 +50,22 @@ Fotos, cotas disponibles y estimaciones: `../docs/TRAIN_INTERIOR_REFERENCES.md`.
 ```
 
 Las siete colecciones `CAF interior NN` se exportan dentro de `train.glb`.
-Sus 21 luces AREA se conservan en `lighting.trainAreaLights` y se mueven con
+Sus 16 luces AREA (dos tiras por salón y dos luces de cabina) se conservan en `lighting.trainAreaLights` y se mueven con
 el tren; sólo se activan las cercanas a la cámara. Los huecos nativos atraviesan
 la carrocería, las juntas y las hojas de puerta; el vidrio usa alfa transparente.
+
+Para reconstruir únicamente los interiores preservando la carrocería:
+`python3 blender/make_interior_textures.py` genera gráficos propios con Pillow;
+después ejecuta Blender con `--python blender/rebuild_interior.py` y exporta
+con `export_web.py`. Las texturas quedan empaquetadas en el archivo nativo.
+`interior_model.rebuild_saloon_lighting()` permite reemplazar sólo las carcasas,
+los difusores y las fuentes del salón conservando puertas, asientos y cabinas.
+El material opal incluye un mapa de emisión empaquetado para distinguir la
+curvatura y los extremos. WebGL aproxima la luz reflejada hacia el techo con
+una fuente tenue por salón visible; no representa lámparas físicas adicionales.
+La exposición web del salón está calibrada por separado de Cycles. Cuatro
+mapas locales de sombras, alineados con los difusores, dan sombra a asientos
+y herrajes; se desactivan al salir del interior de pasajeros.
 
 Double-click `run_metro_game.command` in Finder, or run:
 

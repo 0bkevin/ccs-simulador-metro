@@ -2,14 +2,14 @@
 
 Recreación jugable en Three.js y WebGL de una cabina de la Línea 1, desde Caño Amarillo hasta Altamira. El recorrido jugable selecciona cinco estaciones icónicas —Caño Amarillo, Capitolio, Bellas Artes, Plaza Venezuela y Altamira— con un tren de siete coches y arquitectura específica por estación. La Línea 1 histórica tiene 22 estaciones; esa cifra se conserva como referencia documental.
 
-La aplicación web carga los modelos de Blender exportados a `public/models/blender/train.glb` y `environment.glb`, junto con `manifest.json`. La ruta comprimida conserva cinco paradas en 0, 510, 1060, 1610 y 2160 m. Las páginas `/model-review.html` y `/station-review.html` inspeccionan esos mismos GLB; no ejecutan Blender dentro del navegador. Los assets son aproximaciones visuales y no una medición 1:1. Puertas y ruedas no tienen animación en el export actual.
+La aplicación web carga los modelos de Blender exportados a `public/models/blender/train.glb` y `environment.glb`, junto con `manifest.json`. La ruta comprimida conserva cinco paradas en 0, 510, 1060, 1610 y 2160 m. Las páginas `/model-review.html` y `/station-review.html` inspeccionan esos mismos GLB; no ejecutan Blender dentro del navegador. Los assets son aproximaciones visuales y no una medición 1:1. Las puertas de pasajeros se animan por comando; las ruedas permanecen estáticas.
 
 ## Controles
 
 - `W` / `↑`: tracción.
 - `S` / `↓`: freno de servicio.
 - `Espacio`: freno de emergencia; permanece activo hasta detener el tren.
-- `E`: abrir o cerrar puertas cuando el tren está detenido en la zona de parada.
+- `E`: abrir o cerrar las puertas del lado del andén cuando el tren está detenido en la zona de parada. Se conserva el embarque de tres segundos y la tracción espera al cierre completo.
 - `P`: pausar o continuar.
 - `C`: cambiar entre vista de conducción, exterior y aérea.
 - `R`: reiniciar el servicio.

@@ -93,12 +93,36 @@ test("las puertas respetan dwell, movimiento y zona de parada", () => {
     false,
     "no deben abrir con el tren en marcha",
   );
-  tickFor(sim, 1, { brake: true });
+  tickFor(sim, 7, { throttle: true });
+  tickFor(sim, 6, { brake: true });
   assert.equal(
     sim.toggleDoors().doorsOpen,
     false,
     "no deben abrir fuera de la zona",
   );
+});
+
+test('explicit door commands are idempotent and can reopen at the departure platform', () => {
+  const sim = startAtCanoAmarillo();
+  assert.equal(sim.state.target, 1);
+  assert.equal(sim.setDoors(true).doorsOpen, true);
+  assert.equal(sim.state.doorSide, -1);
+  assert.equal(sim.setDoors(true).dwell, 0);
+  assert.equal(sim.setDoors(false).doorsOpen, false);
+  assert.equal(sim.setDoors(false).doorsOpen, false);
+  assert.equal(sim.state.target, 1);
+  assert.equal(sim.state.serviceCount, 1);
+  sim.pause(true);
+  assert.equal(sim.setDoors(true).doorsOpen, false);
+});
+
+test('island platforms select the opposite side and stopping alone never opens doors', () => {
+  const sim = createSimulation(stations.slice(2));
+  sim.start();
+  assert.equal(sim.state.doorSide, 1);
+  finishDwellAndClose(sim);
+  tickFor(sim, 10);
+  assert.equal(sim.state.doorsOpen, false);
 });
 
 test("pausa conserva posición y velocidad; emergencia desacelera", () => {

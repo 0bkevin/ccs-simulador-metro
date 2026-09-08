@@ -132,6 +132,7 @@ def make_export_scene(asset_name, source_objs, source_depsgraph):
     stats = {"meshes": 0, "triangles": 0, "bounds": bounds_init(), "collections": {}}
     made = []
     source_by_obj = {}
+    moving_parents = {}
 
     for src in source_objs:
         # Use the evaluated object so bevels and every other viewport modifier
@@ -158,7 +159,20 @@ def make_export_scene(asset_name, source_objs, source_depsgraph):
             stats["triangles"] += max(0, len(poly.vertices) - 2)
         stats["meshes"] += 1
         key = tuple(m.name if m else "__none__" for m in mesh.materials)
-        groups[(source_collection, key)].append(out)
+        motion = src.parent if src.parent and (src.parent.get('doorId') or src.parent.get('cabControlId')) else None
+        motion_id = (motion.get('doorId') or motion.get('cabControlId')) if motion else None
+        if motion:
+            if motion_id not in moving_parents:
+                parent = bpy.data.objects.new(motion.name, None)
+                root.objects.link(parent)
+                for prop in ('doorId','doorSide','doorCentreLocal','doorTravelX','doorTravelZ','cabControlId','cabControl','carIndex','cabDirection'):
+                    if prop in motion:parent[prop] = motion[prop]
+                parent.matrix_world=motion.matrix_world.copy()
+                parent['sourceCollection'] = motion.users_collection[0].name
+                moving_parents[motion_id] = parent
+            out['motionId'] = motion_id
+            if motion.get('doorId'):out['doorId'] = motion_id
+        groups[(source_collection, key, motion_id)].append(out)
         source_by_obj[out.name] = source_collection
         coll_name = source_collection
         cstats = stats["collections"].setdefault(coll_name, {"meshes": 0, "triangles": 0, "bounds": bounds_init()})
@@ -187,12 +201,14 @@ def make_export_scene(asset_name, source_objs, source_depsgraph):
     for obj in made:
         collection_name = source_by_obj.get(obj.name, "Uncategorized")
         world = obj.matrix_world.copy()
-        obj.parent = empties.get(collection_name)
+        obj.parent = moving_parents.get(obj.get('motionId')) or empties.get(collection_name)
         obj.matrix_world = world
+    for parent in moving_parents.values():
+        parent.parent = empties[parent['sourceCollection']]
 
     # Join compatible static meshes by collection and material signature. The
     # active object's world transform is retained by Blender's join operator.
-    for (collection_name, _materials), objects in groups.items():
+    for (collection_name, _materials, _motion_id), objects in groups.items():
         if len(objects) < 2:
             continue
         bpy.ops.object.select_all(action="DESELECT")
@@ -246,6 +262,10 @@ def main():
     if os.path.abspath(bpy.data.filepath) != source:
         raise RuntimeError(f"Loaded blend does not match --source: {bpy.data.filepath}")
     loaded_hash = source_hash(source)
+    # Interior rebuilds can leave thousands of unlinked mesh datablocks.
+    # Purge only those orphans in this disposable process: join() otherwise
+    # scans every stale ID for each mesh. The authored source is never saved.
+    bpy.data.orphans_purge(do_local_ids=True, do_linked_ids=False, do_recursive=True)
     from station_lighting import validate_surface_maps
     validate_surface_maps()
     source_scene = bpy.context.scene
@@ -290,12 +310,18 @@ def main():
         "coordinateSystem": {"up": "Y", "routeAxis": "Z", "exportYup": False},
         "scale": {"units": "metres", "route": SPEC["route"], "tunnel": SPEC["tunnel"]},
         "train": {"carCount": len(TRAIN_COLLECTIONS), "collections": TRAIN_COLLECTIONS,
+            "doors": {"leafCount": 112, "baysPerSidePerCar": 4,
+                "centresLocalMetres": {name:list(bpy.data.collections[name]['door_centres_local_m']) for name in TRAIN_COLLECTIONS},
+                "mechanism": "paired exterior sliding leaves", "nodeProperty": "doorId",
+                "travelMetres": .895, "clearanceMetres": .115,
+                "timingBasis": "visual estimate; not a manufacturer cycle specification"},
             "interior": {
                 "collections": [name for name in INTERIOR_COLLECTIONS if bpy.data.collections.get(name)],
                 "cars": [{"index": i, "center": float(bpy.data.collections[name]['center_z']),
                     "direction": int(bpy.data.collections[name]['direction']),
                     "floorY": float(bpy.data.collections[name]['floor_y_m']),
-                    "eyeY": float(bpy.data.collections[name]['eye_y_m'])}
+                    "eyeY": float(bpy.data.collections[name]['eye_y_m']),
+                    **({"cabEyeLocal": list(bpy.data.collections[name]['cab_eye_local_m'])} if 'cab_eye_local_m' in bpy.data.collections[name] else {})}
                     for i,name in enumerate(INTERIOR_COLLECTIONS,1) if bpy.data.collections.get(name)],
             }},
         "stations": [

@@ -19,8 +19,8 @@ source=bpy.data.filepath
 if not source: raise RuntimeError('Open the saved metro source before rebuilding its interior')
 collections=build_interior()
 bpy.context.scene['interior_reference_document']='docs/TRAIN_INTERIOR_REFERENCES.md'
-bpy.context.scene['interior_accuracy_status']='CAF delivery passenger interior from original photos; estimated dimensions, no authenticated interior CAD'
+bpy.context.scene['interior_accuracy_status']='CAF delivery passenger saloons and operator cabs from photographs and equipment guide; estimated dimensions, no authenticated interior CAD'
 for coll in collections:
     print(coll.name,len(coll.objects),'objects',sum(1 for o in coll.objects if o.get('interior_role')=='seat'),'seats')
 bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(args.output or source))
-print('Saved native CAF passenger interior:',args.output or source)
+print('Saved seven native CAF saloons and two operator cabs:',args.output or source)
