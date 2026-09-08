@@ -2,8 +2,9 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { loadBlenderAssets } from "./blender-assets.js";
 import { configureBlenderRenderer, createBlenderLighting, prepareBlenderMeshes } from "./blender-presentation.js";
-import { stationViews as stations, getStationView, getTunnelRange } from "./station-views.js";
+import { stationViews as stations, getStationView, getTunnelTravelRange } from "./station-views.js";
 import { applyStationCut, stationMetrics, createScaleRuler } from "./station-inspection.js";
+import { createStationCamera } from './station-camera.js';
 import "./style.css";
 
 const mount = document.querySelector("#station-review");
@@ -12,13 +13,14 @@ configureBlenderRenderer(renderer);
 renderer.setSize(innerWidth, innerHeight);
 mount.append(renderer.domElement);
 const scene = new THREE.Scene();
-let lighting;
+let lighting, cameraGuard;
 const scaleRuler = createScaleRuler(scene);
 const camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, .2, 700);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = false;
-controls.minDistance = .5; controls.maxDistance = 260;
 function render() {
+  if (cameraGuard?.adjusting) return;
+  cameraGuard?.constrain();
   if (!document.hidden) {
     if (lighting && environment) {
       const view = getStationView(active, activeView, camera.aspect);
@@ -53,18 +55,13 @@ function setView(kind = "platform") {
   });
   applyStationCut(renderer, view);
   scaleRuler.show(active, kind);
-  camera.up.fromArray(view.up);
-  camera.fov = view.fov;
-  camera.updateProjectionMatrix();
-  camera.position.fromArray(view.position);
-  controls.target.fromArray(view.target);
-  controls.update();
+  cameraGuard.setView(active, view);
   lighting.focus(camera.position, view.collection, view.exterior, kind === "plan" || kind === "section");
   ui.querySelector("#stationMetrics").textContent = stationMetrics(active, kind);
   ui.querySelector("#scaleHint").hidden = kind !== "plan";
   ui.querySelector("#tunnelTravelLabel").hidden = kind !== "tunnel";
-  const range = getTunnelRange(active), travel = ui.querySelector("#tunnelTravel");
-  travel.min = range.start + 2; travel.max = range.end - 2; travel.value = camera.position.z;
+  const range = getTunnelTravelRange(active), travel = ui.querySelector("#tunnelTravel");
+  travel.min = range.min; travel.max = range.max; travel.value = camera.position.z;
   ui.querySelectorAll("[data-view]").forEach((b) => {
     b.classList.toggle("active", b.dataset.view === kind);
     b.setAttribute("aria-pressed", b.dataset.view === kind);
@@ -85,14 +82,16 @@ function inspect(index, view = "platform") {
 ui.querySelectorAll("[data-view]").forEach((b) => b.onclick = () => setView(b.dataset.view));
 select.onchange = () => inspect(select.value);
 ui.querySelector("#tunnelTravel").oninput = event => {
-  const z = Number(event.target.value); camera.position.set(0, 2.5, z); controls.target.set(0, 2.15, z + 18);
-  controls.update(); lighting.focus(camera.position, `Tunnel ${stations[active].id}`); render();
+  cameraGuard.moveTunnel(event.target.value);
+  event.target.value = camera.position.z;
+  lighting.focus(camera.position, `Tunnel ${stations[active].id}`); render();
 };
 loadBlenderAssets({ includeTrain: false }).then((assets) => {
   environment = assets.environment;
   prepareBlenderMeshes(environment, renderer);
   lighting = createBlenderLighting(scene, renderer, assets.manifest);
-  window.__metroReview = { environment, scene, camera, controls, renderer, lighting, manifest: assets.manifest, assetSource: assets.source, inspect, setView, render, get activeView() { return activeView; } };
+  cameraGuard = createStationCamera({ camera, controls, environment });
+  window.__metroReview = { environment, scene, camera, controls, renderer, lighting, cameraGuard, manifest: assets.manifest, assetSource: assets.source, inspect, setView, render, get activeView() { return activeView; } };
   scene.add(environment); findRoots(assets.manifest.stations.map((s) => s.collection));
   const params = new URLSearchParams(location.search);
   const index = stations.findIndex((s) => s.id === params.get("station"));

@@ -10,6 +10,12 @@ export function getTunnelRange(index) {
   return { start: station.distance + 5, end: stationViews[index + 1]?.distance - 145 || routeStudy.end };
 }
 
+export function getTunnelTravelRange(index) {
+  const { start, end } = getTunnelRange(index);
+  // Keep a modeled buffer in front of the camera at both clipped ends.
+  return { min: start + 8, max: end - 24 };
+}
+
 export function getStationView(index, kind = 'platform', aspect = 1) {
   index = Math.max(0, Math.min(stationViews.length - 1, Number(index) || 0));
   const station = stationViews[index];
@@ -53,5 +59,9 @@ export function getStationView(index, kind = 'platform', aspect = 1) {
   if (kind === 'tunnel') collections.push(`Station ${station.name}`, ...(stationViews[index + 1] ? [`Station ${stationViews[index + 1].name}`] : []));
   if (kind === 'entrance' && index === 0) collections.push(`Station ${station.name}`);
   if (index === 0 && ['platform', 'detail'].includes(kind)) collections.push(station.context);
+  if (['platform','detail'].includes(kind)) {
+    collections.push(`Tunnel ${station.id}`);
+    if (index) collections.push(`Tunnel ${stationViews[index-1].id}`);
+  }
   return { kind, views, exterior, position, target, clip, clipEnd, up: kind === 'plan' ? [1, 0, 0] : [0, 1, 0], fov: kind === 'plan' ? 65 : exterior ? 57 : 68, collection, collections };
 }

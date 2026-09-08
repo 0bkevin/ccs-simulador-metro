@@ -8,7 +8,7 @@ import stations, { lineInfo } from "./route.js";
 import { createWorld } from "./blender-world.js";
 import { loadBlenderAssets } from "./blender-assets.js";
 import { configureBlenderRenderer } from "./blender-presentation.js";
-import { stationViews, getTunnelRange } from "./station-views.js";
+import { stationViews, getTunnelTravelRange } from "./station-views.js";
 import { createSimulation } from "./simulation.js";
 import { createMetroAudio, actualRecordings, audioDescription } from "./audio.js";
 import "./style.css";
@@ -44,7 +44,7 @@ renderer.setSize(innerWidth, innerHeight);
 app.append(renderer.domElement);
 const world = createWorld(THREE, renderer, data, blenderAssets);
 world.resize(innerWidth, innerHeight);
-const sim = createSimulation(data);
+const sim = createSimulation(data, { routeEnd: getTunnelTravelRange(data.length - 1).max - 5 });
 const metroAudio = createMetroAudio();
 window.__metro = {
   world,
@@ -141,8 +141,8 @@ function inspectStation(index = world.activeStation, kind = "platform") {
   $("gameStationDetail").textContent = station.detail;
   $("gameStationMetrics").textContent = stationMetrics(view.index, view.kind);
   $("gameTunnelTravelLabel").hidden = view.kind !== "tunnel";
-  const tunnelRange = getTunnelRange(view.index);
-  $("gameTunnelTravel").min = tunnelRange.start + 2; $("gameTunnelTravel").max = tunnelRange.end - 2;
+  const tunnelRange = getTunnelTravelRange(view.index);
+  $("gameTunnelTravel").min = tunnelRange.min; $("gameTunnelTravel").max = tunnelRange.max;
   $("gameTunnelTravel").value = world.camera.position.z;
   stationPanel.querySelectorAll("[data-station-view]").forEach(button => {
     button.hidden = !view.views.includes(button.dataset.stationView);
@@ -165,7 +165,10 @@ stationPanel.querySelectorAll("[data-station-view]").forEach(button => {
   button.onclick = () => inspectStation(world.inspection.index, button.dataset.stationView);
 });
 $("returnToGame").onclick = leaveStation;
-$("gameTunnelTravel").oninput = event => world.moveTunnel(event.target.value);
+$("gameTunnelTravel").oninput = event => {
+  world.moveTunnel(event.target.value);
+  event.target.value = world.camera.position.z;
+};
 
 const interiorPanel = document.createElement("section");
 interiorPanel.className = "interior-controls"; interiorPanel.hidden = true;

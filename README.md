@@ -16,6 +16,8 @@ La aplicación web carga los modelos de Blender exportados a `public/models/blen
 
 `INSPECCIONAR TREN` abre una página de revisión exterior en `/model-review.html`. `INSPECCIONAR ESTACIONES` abre `/station-review.html`, donde puedes revisar las cinco estaciones con vistas de andén, detalle, mezzanina, accesos, planta, corte y túnel. El control RECORRER TÚNEL permite explorar las secciones a altura de los ojos. La revisión de estaciones usa iluminación local y los mismos módulos de arquitectura; las referencias están en [docs/STATION_REFERENCES.md](docs/STATION_REFERENCES.md). Las notas del tren están en [docs/EXTERIOR_MODEL.md](docs/EXTERIOR_MODEL.md).
 
+En la exploración de estaciones, la cámara se detiene ante paredes, escaleras, pilares y vidrio, y permanece dentro del andén o la mezzanina seleccionados. Cambia de nivel con los botones de vista. El túnel conserva un margen antes de sus extremos; planta, corte y accesos mantienen el modelo encuadrado al acercar o arrastrar. Estas protecciones funcionan tanto en el juego como en el visor independiente. Detalles y comprobaciones en [docs/STATION_CAMERA.md](docs/STATION_CAMERA.md).
+
 También hay controles táctiles en pantalla y un control de volumen para el audio procedural. La lista de estaciones se puede desplazar en móvil. El botón `FUENTES` pausa la simulación y abre la investigación completa; al cerrar conserva el estado de pausa anterior.
 
 La revisión individual, los planos buscados, las medidas comprobadas y las estimaciones están en [docs/STATION_ACCURACY_REVIEW.md](docs/STATION_ACCURACY_REVIEW.md). Los túneles tienen 5,16 m de diámetro libre y anillos de 0,80 m según Perri; las conexiones entre estaciones se abrevian, con 360–400 m de vía entre andenes.

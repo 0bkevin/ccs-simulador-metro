@@ -140,3 +140,17 @@ test("recuperar no mueve un tren que no ha omitido una parada", () => {
   assert.equal(recovered.score, before.score);
   assert.equal(recovered.missed, false);
 });
+
+test('a missed final stop cannot coast past the modeled route, and recovery still works', () => {
+  const lastLeg = stations.slice(-2);
+  const routeEnd = 2371;
+  const sim = createSimulation(lastLeg,{ routeEnd });
+  sim.start(); finishDwellAndClose(sim);
+  tickFor(sim,180,{ throttle:true });
+  assert.equal(sim.state.missed,true);
+  assert.equal(sim.state.position,routeEnd);
+  assert.equal(sim.state.speed,0);
+  tickFor(sim,20,{ throttle:true });
+  assert.equal(sim.state.position,routeEnd);
+  assert.equal(sim.recover().position,stations.at(-1).distance);
+});

@@ -1,5 +1,6 @@
-export function createSimulation(stops = []) {
+export function createSimulation(stops = [], { routeEnd = Infinity } = {}) {
   const first = stops[0]?.distance ?? 0;
+  const end = Math.max(stops.at(-1)?.distance ?? first, routeEnd);
   let s;
   const fresh = () => ({
     position: first,
@@ -70,6 +71,8 @@ export function createSimulation(stops = []) {
       else if (traction) s.speed = Math.min(18, s.speed + 1.15 * step);
       else s.speed = Math.max(0, s.speed - 0.22 * step);
       s.position += s.speed * step;
+      // A missed final stop must not carry the camera beyond the modeled tail.
+      if (s.position >= end) { s.position = end; s.speed = 0; }
       const stop = stops[s.target];
       if (stop && s.position > stop.distance + 12 && !s.missed) {
         s.missed = true;
