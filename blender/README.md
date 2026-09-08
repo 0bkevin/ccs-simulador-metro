@@ -36,7 +36,10 @@ INTERIOR DEL TREN entra al salón dentro del juego. Selecciona uno de los siete
 coches, arrastra para mirar o utiliza SALÓN, ASIENTOS, PUERTAS e INTERCONEXIÓN.
 El deslizador recorre el coche; W/S conservan tracción y freno. El interior usa
 los mismos coches en movimiento y permite ver las estaciones por las ventanas.
-Se reconstruyen salones de pasajeros; el puesto del conductor queda pendiente.
+PUESTO DEL OPERADOR y ASIENTO DEL OPERADOR muestran las cabinas de los coches
+1 y 7. El pupitre, el asiento y sus equipos siguen fotografías de entrega y
+el diagrama de equipos Serie 6. Los indicadores representan el estado del
+simulador; no implementan el sistema CBTC/COSMOS real.
 Fotos, cotas disponibles y estimaciones: `../docs/TRAIN_INTERIOR_REFERENCES.md`.
 
 `rebuild_train.py` reconstruye exterior e interior conservando las estaciones:
@@ -47,9 +50,14 @@ Fotos, cotas disponibles y estimaciones: `../docs/TRAIN_INTERIOR_REFERENCES.md`.
 ```
 
 Las siete colecciones `CAF interior NN` se exportan dentro de `train.glb`.
-Sus 21 luces AREA se conservan en `lighting.trainAreaLights` y se mueven con
+Sus 23 luces AREA (21 de salón y dos de cabina) se conservan en `lighting.trainAreaLights` y se mueven con
 el tren; sólo se activan las cercanas a la cámara. Los huecos nativos atraviesan
 la carrocería, las juntas y las hojas de puerta; el vidrio usa alfa transparente.
+
+Para reconstruir únicamente los interiores preservando la carrocería:
+`python3 blender/make_interior_textures.py` genera gráficos propios con Pillow;
+después ejecuta Blender con `--python blender/rebuild_interior.py` y exporta
+con `export_web.py`. Las texturas quedan empaquetadas en el archivo nativo.
 
 Double-click `run_metro_game.command` in Finder, or run:
 

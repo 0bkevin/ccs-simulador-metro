@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import math
 import random
+import os
 import bpy
 from mathutils import Vector
 from body_geometry import BODY_HALF_LENGTH, CAR_PITCH, door_centres, saloon_bay_centres, body_width
@@ -42,12 +43,20 @@ def _materials():
         'red': _material('CAF interior vermilion seating', (.72,.035,.019), .02,.29),
         'blue': _material('CAF interior blue priority seating', (.014,.022,.34), .03,.25),
         'door': _material('CAF interior red door skin', (.60,.018,.010), .05,.34),
-        'steel': _material('CAF interior satin stainless steel', (.55,.58,.56), .82,.26),
+        'steel': _material('CAF interior satin stainless steel', (.55,.58,.56), .82,.32),
         'dark': _material('CAF interior black seals and straps', (.016,.021,.023), .03,.60),
         'seam': _material('CAF interior narrow panel joints', (.19,.23,.24), .12,.55),
         'floor': _material('CAF interior blue flecked resilient flooring', (.24,.37,.42), .0,.74),
-        'light': _material('CAF interior opal light diffusers', (.88,.92,.94), .0,.34, (.76,.86,1.0)),
+        'light': _material('CAF interior opal light diffusers', (.88,.90,.87), .0,.34, (.94,.96,1.0)),
+        'priority': _material('CAF interior priority seat pictograms',(.72,.75,.73),0,.58),
+        'glass': _material('CAF interior transparent partition glass',(.15,.20,.21),0,.16),
     }
+    glass=mats['glass'];glass.diffuse_color=(.15,.20,.21,.22)
+    glass.node_tree.nodes.get('Principled BSDF').inputs['Alpha'].default_value=.22
+    glass.surface_render_method='DITHERED'
+    from operator_interior import _texture
+    _texture(mats['priority'],'priority-seating.png')
+    mats['light'].node_tree.nodes.get('Principled BSDF').inputs['Emission Strength'].default_value=1.1
     # Small authored repeat, not reference photography. Metre-scaled UVs keep
     # the fine blue-floor flecks a surface finish rather than oversized gravel.
     mat=mats['floor']; nodes=mat.node_tree.nodes; links=mat.node_tree.links
@@ -151,7 +160,8 @@ SEAT_PROFILE=((1.305,2.145),(1.30,2.135),(1.286,2.095),(1.266,1.96),
 def _seat(side,z,mat,mats,coll):
     def surface(name,painted):
         verts=[];faces=[];count=10
-        profile=SEAT_PROFILE[1:-1] if painted else SEAT_PROFILE
+        base=SEAT_PROFILE[1:-1] if painted else SEAT_PROFILE
+        profile=[(x,y) for x,y,_ in _smooth_path([(x,y,0) for x,y in base],3)]
         for row,(x,y) in enumerate(profile):
             t=row/(len(profile)-1)
             half=(.206 if painted else .231)*(1-.08*math.exp(-t*30))
@@ -159,7 +169,7 @@ def _seat(side,z,mat,mats,coll):
                 s=j/count*2-1
                 # White perimeter is visible around a smaller colored face.
                 relief=.020*s*s
-                back=t<.51
+                back=row < len(profile)*.51
                 xx=x-(relief if back else 0)-(.004 if painted else 0)
                 yy=y+(0 if back else relief)+(.003 if painted else 0)
                 verts.append((side*xx,yy,z+s*half))
@@ -194,9 +204,26 @@ def _bench(side,zc,count,priority,mats,coll):
         _beam('CAF interior wall-mounted seat cantilever',(side*1.39,1.31,zz),(side*.94,1.46,zz),.035,mats['steel'],coll,10)
     for end in (-1,1):
         z=zc+end*(width/2+.028)
+        # Pale moulded wing behind the curved end rail, visible beside each
+        # bench in both delivery photographs. It stays outside the aisle.
+        from cab_geometry import fillet
+        outline=fillet([(.76,1.60),(.84,1.66),(1.12,1.84),(1.30,2.13),(1.34,2.13),(1.34,1.53),(.80,1.53)],.035,5)
+        vv=[(side*x,y,z+dz) for dz in (-.011,.011) for x,y in outline];n=len(outline)
+        ff=[tuple(reversed(range(n))),tuple(range(n,n*2))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
+        if side<0:ff=[tuple(reversed(f)) for f in ff]
+        _mesh('CAF interior molded seat-end divider',vv,ff,mats['shell'],coll)
         # Swept steel armrest and curved stanchion visible in both photographs.
         points=[(side*x,y,z) for x,y in ((1.33,1.96),(1.18,1.84),(.96,1.72),(.79,1.71),(.74,1.78),(.735,1.90),(.75,2.16),(.81,2.47),(.86,2.79),(.92,3.04),(1.03,3.13),(1.15,3.16))]
         _tube('CAF interior curved seat-end stanchion',_smooth_path(points),.018,mats['steel'],coll,8)
+        for x,y in ((1.33,1.96),(1.15,3.16)):
+            _beam('CAF interior stanchion mounting socket',(side*(x-.017),y,z),(side*(x+.030),y,z),.026,mats['steel'],coll,12)
+    if priority:
+        y0,y1=2.15,2.22;w=.74
+        verts=[(side*(body_width(y)-.080),y,zz) for zz,y in [(zc-w/2,y0),(zc+w/2,y0),(zc+w/2,y1),(zc-w/2,y1)]]
+        face=(0,1,2,3) if side<0 else (3,2,1,0)
+        obj=_mesh('CAF interior priority seating sign',verts,[face],mats['priority'],coll)
+        uv=obj.data.uv_layers.new(name='priority sign')
+        for loop,co in zip(uv.data,[(0,0),(1,0),(1,1),(0,1)]):loop.uv=co
     return width
 
 
@@ -269,7 +296,7 @@ def _ceiling(center,direction,driving,mats,coll):
         coll.objects.link(obj);obj.data.materials.append(mats['dark'])
         for p in obj.data.polygons:p.use_smooth=True
     for u in (-6,0,6):
-        data=bpy.data.lights.new('CAF interior ceiling area wash','AREA');data.energy=42;data.color=(.82,.90,1.0);data.shape='RECTANGLE';data.size=1.8;data.size_y=4.7
+        data=bpy.data.lights.new('CAF interior ceiling area wash','AREA');data.energy=50;data.color=(.94,.96,1.0);data.shape='RECTANGLE';data.size=1.8;data.size_y=4.7
         obj=bpy.data.objects.new('CAF interior ceiling area wash',data);coll.objects.link(obj);obj.location=(0,3.29,center+direction*u)
         obj.rotation_mode='QUATERNION';obj.rotation_quaternion=Vector((0,0,-1)).rotation_difference(Vector((0,-1,0)))
         obj['interior_light']=True
@@ -294,15 +321,46 @@ def _end_portal(center,direction,u,mats,coll,cab=False):
             _box('CAF interior open gangway lining',(side*1.15,2.22,z),(.34,2.30,.075),mats['liner'],coll,.025)
     _box('CAF interior end lintel',(0,3.29,z),(2.04 if cab else 2.30,.22,.09),mats['liner'],coll,.025)
     if cab:
-        _box('CAF interior driver partition door',(0,2.135,z+direction*.004),(.81,2.11,.034),mats['liner'],coll,.036)
-        # Door's small closed smoked window as photographed, not a claimed cab.
-        _box('CAF interior partition window gasket',(0,2.69,z-direction*.022),(.47,.65,.016),mats['dark'],coll,.038)
+        # A real glazed opening, replacing the old black patch over a solid door.
+        for x,y,w,h in [(0,1.7275,.81,1.295),(0,3.1025,.81,.155),(-.32,2.705,.17,.64),(.32,2.705,.17,.64)]:
+            _box('CAF interior driver partition door',(x,y,z), (w,h,.034),mats['liner'],coll,.015)
+        outer=_rounded_rect(-.254,.254,2.358,3.050,.037,8)
+        inner=_rounded_rect(-.225,.225,2.386,3.022,.026,8)
+        n=len(outer);verts=[(x,y,z-direction*.023) for x,y in outer+inner]
+        faces=[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
+        if direction==1:faces=[tuple(reversed(f)) for f in faces]
+        _mesh('CAF interior partition window gasket',verts,faces,mats['dark'],coll)
+        _box('CAF interior cab partition transparent pane',(0,2.705,z),(.45,.636,.006),mats['glass'],coll,.025)
         _beam('CAF interior partition door pull',(.27,2.03,z-direction*.055),(.27,2.27,z-direction*.055),.013,mats['steel'],coll,12)
+        for y in (1.34,2.24,2.98):
+            _box('CAF interior partition door hinge',(-.390,y,z-direction*.027),(.034,.080,.025),mats['steel'],coll,.008)
     else:
         bridge_half=CAR_PITCH*.5-abs(u)+.001
         _floor('CAF interior flush intercar bridge',z-bridge_half,z+bridge_half,2.14,mats,coll)
         for off in (-.21,-.14,-.07,0,.07,.14,.21):
             _box('CAF interior gangway floor articulation strip',(0,FLOOR_Y+.003,z+off),(2.12,.006,.009),mats['steel'],coll)
+
+
+def _fittings(center,direction,driving,mats,coll):
+    """Serviceable trim and visible hardware, with dimensions photo-scaled."""
+    for side in (-1,1):
+        for u in door_centres(driving):
+            z=center+direction*u
+            # Header joints and captive fasteners are above the clear opening.
+            for edge in (-1,1):
+                _panel('CAF interior door header access joint',side,3.125,3.218,z+edge*.81-.0015,z+edge*.81+.0015,mats['seam'],coll,.100)
+                _beam('CAF interior door header captive screw',(side*1.246,3.177,z+edge*.76),(side*1.250,3.177,z+edge*.76),.008,mats['steel'],coll,12)
+            # Small mechanical-release cover, kept flush with the header.
+            _box('CAF interior emergency door release recess',(side*1.222,3.174,z+.52),(.018,.070,.22),mats['dark'],coll,.01)
+            _box('CAF interior recessed red release cover',(side*1.209,3.174,z+.52),(.014,.051,.19),mats['door'],coll,.008)
+            _beam('CAF interior release handle',(side*1.197,3.172,z+.46),(side*1.197,3.172,z+.58),.008,mats['steel'],coll,10)
+    for u in (-2.0,2.0):
+        z=center+direction*u
+        _cylinder('CAF interior flush ceiling speaker',(0,3.369,z),.075,.013,mats['liner'],coll,(math.pi/2,0,0),24)
+        for row in range(7):
+            for col in range(7):
+                if (row-3)**2+(col-3)**2<=9:
+                    _cylinder('CAF interior speaker perforation',((row-3)*.016,3.361,z+(col-3)*.016),.0026,.002,mats['seam'],coll,(math.pi/2,0,0),6)
 
 
 def build_interior():
@@ -316,12 +374,15 @@ def build_interior():
         name=f'CAF interior {index:02d}'
         coll=bpy.data.collections.get(name)
         if coll:
-            for obj in list(coll.objects): bpy.data.objects.remove(obj,do_unlink=True)
+            # Removing thousands of fittings one by one repeatedly scans every
+            # ID in the full station scene. Remove the owned collection in one
+            # batch; exterior door parents themselves are in CAF car NN.
+            bpy.data.batch_remove(ids=tuple(coll.objects))
         else:
             coll=bpy.data.collections.new(name);bpy.context.scene.collection.children.link(coll)
         center,direction=car_frame(index);driving=index in (1,7)
         coll['vehicle']='CAF Serie 6';coll['reference_document']=REFERENCE
-        coll['accuracy_status']='Photo-led delivery interior; furniture dimensions and repeated seat allocation estimated'
+        coll['accuracy_status']='Photo-led delivery saloon and operator cab; furniture dimensions and repeated seat allocation estimated'
         coll['car_index']=index;coll['floor_y_m']=FLOOR_Y;coll['eye_y_m']=EYE_Y
         coll['center_z']=center;coll['direction']=direction
         z0,z1=sorted([center-direction*10.23,center+direction*(8.10 if driving else 10.23)])
@@ -331,6 +392,10 @@ def build_interior():
         _ceiling(center,direction,driving,mats,coll)
         _end_portal(center,direction,-10.20,mats,coll)
         _end_portal(center,direction,8.10 if driving else 10.20,mats,coll,cab=driving)
+        _fittings(center,direction,driving,mats,coll)
+        if driving:
+            from operator_interior import build_operator
+            build_operator(index,center,direction,coll,mats)
         collections.append(coll)
     return collections
 

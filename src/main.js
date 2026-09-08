@@ -174,7 +174,7 @@ $("gameTunnelTravel").oninput = event => {
 const interiorPanel = document.createElement("section");
 interiorPanel.className = "interior-controls"; interiorPanel.hidden = true;
 interiorPanel.setAttribute("aria-label", "Interior del tren");
-interiorPanel.innerHTML = `<div class="route-label">Salón de pasajeros · CAF</div><label>COCHE <select id="interiorCar" aria-label="Coche del tren"></select></label><div class="interior-presets"><button data-interior-view="saloon">SALÓN</button><button data-interior-view="seats">ASIENTOS</button><button data-interior-view="doors">PUERTAS</button><button data-interior-view="gangway">INTERCONEXIÓN</button></div><label>RECORRER COCHE <input id="interiorTravel" type="range" min="-9.6" max="7.6" step=".01" value="6.63" aria-label="Posición dentro del coche"></label><p>Arrastra para mirar alrededor.<br>W / S siguen controlando el tren.</p>`;
+interiorPanel.innerHTML = `<div class="route-label">Interior · CAF Serie 6</div><label>COCHE <select id="interiorCar" aria-label="Coche del tren"></select></label><div class="interior-presets"><button data-interior-view="saloon">SALÓN</button><button data-interior-view="seats">ASIENTOS</button><button data-interior-view="doors">PUERTAS</button><button data-interior-view="gangway">INTERCONEXIÓN</button><button data-interior-view="operator">PUESTO DEL OPERADOR</button><button data-interior-view="cab-seat">ASIENTO DEL OPERADOR</button></div><label id="interiorTravelLabel">RECORRER COCHE <input id="interiorTravel" type="range" min="-9.6" max="7.6" step=".01" value="6.63" aria-label="Posición dentro del coche"></label><p>Arrastra para mirar alrededor.<br>W / S controlan el tren · E abre o cierra puertas.</p>`;
 ui.append(interiorPanel);
 for (let index = 1; index <= 7; index++) {
   const option = document.createElement("option"); option.value = index;
@@ -183,6 +183,8 @@ for (let index = 1; index <= 7; index++) {
 }
 function interiorPreset(kind = "saloon") {
   world.interior.select(Number($("interiorCar").value), kind);
+  $("interiorCar").value = world.interior.state.carIndex;
+  $("interiorTravelLabel").hidden = ['operator','cab-seat'].includes(kind);
   $("interiorTravel").value = world.interior.state.travel;
   interiorPanel.querySelectorAll("[data-interior-view]").forEach(button => {
     button.classList.toggle("active", button.dataset.interiorView === kind);
@@ -484,8 +486,8 @@ function update(now) {
   requestAnimationFrame(update);
 }
 
-if (new URLSearchParams(location.search).get("view") === "interior") {
-  selectCamera(3); interiorPreset();
+if (['interior','operator'].includes(new URLSearchParams(location.search).get("view"))) {
+  selectCamera(3); interiorPreset(new URLSearchParams(location.search).get('view') === 'operator' ? 'operator' : 'saloon');
 }
 world.update(0, sim.state.position, {
   doorsOpen: sim.state.doorsOpen,

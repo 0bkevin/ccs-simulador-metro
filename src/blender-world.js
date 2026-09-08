@@ -2,6 +2,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { createBlenderLighting, prepareBlenderMeshes } from "./blender-presentation.js";
 import { getStationView } from "./station-views.js";
 import { createTrainInterior } from "./train-interior.js";
+import { createTrainCab } from './train-cab.js';
 import { applyStationCut, createScaleRuler } from './station-inspection.js';
 import { createStationCamera } from './station-camera.js';
 import { createTrainDoors } from './train-doors.js';
@@ -39,6 +40,7 @@ export function createWorld(THREE, renderer, stations = [], assets) {
     interior: new THREE.PerspectiveCamera(72, 1, .035, 700),
   };
   const interior = createTrainInterior(train, cameras.interior, renderer, assets.manifest);
+  const cab = createTrainCab(train);
   let cameraMode = "platform", inspection = null, revision = 0, activeStation = 0;
   const controls = renderer ? new OrbitControls(cameras.inspection, renderer.domElement) : null;
   const cameraGuard = createStationCamera({ camera: cameras.inspection, controls, environment });
@@ -91,6 +93,7 @@ export function createWorld(THREE, renderer, stations = [], assets) {
   function update(_dt = 0.016, distance = 0, state = {}) {
     train.position.set(0, 0, Number(distance) || 0);
     doors.update(_dt, state);
+    cab.update(state,doors.fraction);
     const z = train.position.z;
     cameras.forward.position.set(0, 2.5, z + 5.0);
     cameras.forward.lookAt(0, 2, z + 15);
@@ -143,18 +146,18 @@ export function createWorld(THREE, renderer, stations = [], assets) {
       if (object.geometry) object.geometry.dispose();
       if (object.material?.dispose) object.material.dispose();
     });
-    controls?.dispose(); cameraGuard.dispose(); lighting.dispose(); interior.dispose(); scaleRuler.dispose();
+    controls?.dispose(); cameraGuard.dispose(); lighting.dispose(); interior.dispose(); cab.dispose(); scaleRuler.dispose();
   }
   return {
     scene, root, train, cameras,
     get camera() { return activeCamera(); },
     get inspection() { return inspection; },
     get activeStation() { return activeStation; },
-    get renderRevision() { return revision + interior.revision + doors.revision; },
+    get renderRevision() { return revision + interior.revision + doors.revision + cab.revision; },
     get doorFraction() { return doors.fraction; },
     doors,
     setCameraMode, inspectStation, leaveInspection, moveTunnel, update, resize, dispose, controls,
-    stationAssemblies, railPaths: [], lighting, interior, cameraGuard,
+    stationAssemblies, railPaths: [], lighting, interior, cab, cameraGuard,
     assetSource: assets.source,
     manifest: assets.manifest,
   };

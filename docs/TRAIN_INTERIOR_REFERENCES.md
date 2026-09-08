@@ -1,4 +1,4 @@
-# CAF Serie 6 passenger interior
+# CAF Serie 6 passenger and operator interiors
 
 The native saloons in `blender/interior_model.py` reconstruct the appearance of
 the CAF Caracas trains at delivery, consistent with the existing silver/red
@@ -6,6 +6,69 @@ exterior. They are a photo-led reconstruction, not a certified 1:1 CAD model.
 No authenticated dimensioned passenger-furniture plan was found in the search.
 The code keeps estimated interior measurements separate from the dimensional
 anchors already recorded for the car body, doors and windows.
+
+## Operator cab and interior refinement — 8 September 2026
+
+Additional primary material was inspected for this pass:
+
+- The [2010 delivery report](https://www.aporrea.org/actualidad/n170480.html)
+  includes a photograph captioned as the delegation inspecting the cab.
+  [Local reference](../blender/references/caf-delivery-cab-2010.jpg). It shows
+  the charcoal curved desk, dark equipment plates, blue patterned seat with
+  black back and armrests, pale molded lining, guillotine side window, warm
+  longitudinal ceiling lamp, speaker and overhead ventilation slots.
+- The operator's *Guía de ataque de fallas*, revision 5 December 2012,
+  [public reader](https://es.scribd.com/document/775121030/trenes-metro-de-caracas),
+  printed pages 8 and 10 (reader pages 3 and 5), explicitly identifies Serie 6.
+  Its [labeled console photograph](../blender/references/caf-cab-console-guide-2012.jpg)
+  fixes the relative layout: gauge and key switches on the left, radio on the
+  left worktop, DMI left of HMI, CCTV/SIV to the right, central switch bank,
+  and right-hand manipulator. The [display illustrations](../blender/references/caf-cab-displays-guide-2012.jpg)
+  support a circular speed dial and a seven-car status schematic. This is an
+  operator-authored document hosted by a third party, not an authenticated
+  engineering release; the black-and-white scan cannot establish paint colors.
+- *167-000-05-601 COSMOS*, edition 2, June 2012,
+  [public maintenance-manual reader](https://es.scribd.com/document/750448095/167-000-05-601-COSMOS),
+  section 2.2.4 / printed page 2-18, specifies a 10.4-inch 640×480 resistive
+  TFT HMI. The model uses a 0.21133 × 0.15850 m active face, calculated from
+  that diagonal and aspect ratio; the bezel dimensions remain estimated.
+  Like the exterior maintenance manuals, this is a publicly hosted reproduction.
+
+`operator_interior.py` builds both cabs within their respective native interior
+collections. The cabin has a closed floor, curved knee recess and instrument
+binnacle, recessed screens with captive screws, gauge face and needle, control
+collars and caps, emergency mushroom, radio handset and coiled cord, right-hand
+controller, suspended upholstered seat, armrests, footrest, vigilance pedal,
+rear cabinets, inner door trim, ceiling access panels, speaker and warm fixture.
+The rear cab rotates as a complete assembly. Its manipulator stays neutral
+while the leading cab reflects the simulator's traction/braking state.
+
+The original photos establish the larger forms and visible equipment, but do
+not provide a dimensioned desk or seat plan, exact seat supplier, complete
+switch legends, fabric specification, or cabinet contents. Desk and seat sizes,
+small fittings, cab lighting power, and unreadable labels remain estimates.
+Cab ceiling lamp geometry is observed; its 14 W Blender source is a rendering
+parameter. No equipment or dimensions from another CAF fleet were substituted.
+The DMI/HMI readouts are authored simulator graphics, **not real CBTC/COSMOS
+software**. The CCTV face is an inactive monitor, not fabricated video footage.
+The floor, cloth and signs use independently authored textures; source photos
+remain outside the public assets and are not mapped onto geometry.
+
+The passenger refinement preserves the documented longitudinal layout and all
+112 moving leaves. It adds the molded seat-end wings, rail mounting sockets,
+priority-seat graphic strips, ceiling speaker grilles, and door-header access
+hardware. Seat profiles are sampled more finely for curved pan/back transitions.
+The cab partition now contains an actual transparent pane, rather than a black
+rectangle applied over a solid door. Saloon illumination is a neutral white;
+the cab fixture retains the warmer tone visible in the delivery photo.
+
+Review in the lightweight train inspector:
+`/model-review.html?view=operator`, `?view=cab-seat`, `?view=saloon`, or
+`?view=seats`. The car selector reaches all seven saloons and either driving cab.
+In the running service, `/?view=operator` opens the operator position; the
+interior panel switches between passenger accommodation and the two cab views.
+Dragging changes the view direction. W/S and E retain their existing train and
+door commands. The passenger travel slider is hidden in cab views.
 
 ## Direct visual evidence
 
@@ -87,8 +150,8 @@ Y up and Z along the route.
 Car `i` has centre `Z = -7.73 - (i - 1) × 20.96`; its local longitudinal
 coordinate `u` maps to `Z = centre + direction × u`. Direction is +1 except
 for car 7, where it is -1. The driving saloon ends at local `u = 8.10`; its
-partition closes off the unmodeled driver's equipment. This pass models the
-passenger accommodation, not a surveyed control desk.
+partition separates the passenger accommodation from the operator compartment.
+The operator model is described above; its furniture is not surveyed CAD.
 
 The interior meshes, including its panel seams, light diffusers, curved seats,
 straps, cantilevers, threshold grooves and bridge strips, are exported into
@@ -96,7 +159,7 @@ the actual playable train asset. True openings and transparent glazing belong
 to the exterior model; the interior adds gasket rings rather than an opaque
 second layer of glass. Native area lights sit at Y = 3.29 and local
 `u = -6, 0, 6` per car, pointing downward, with 1.8 × 4.7 m rectangles and
-42 W each. These are rendering parameters chosen for visibility, not claimed
+50 W each. These are rendering parameters chosen for visibility, not claimed
 electrical specifications; their web counterparts move with the train.
 
 The default passenger camera height is Y = 2.57 m, approximately 1.50 m above
@@ -116,8 +179,10 @@ The exported asset was checked for unobstructed aisles in all seven cars,
 transparent passenger/door glazing through every exterior layer, and continuous
 inter-car bridge floors. The tests also cover the moving passenger camera,
 car-relative lighting and consistent look controls in the reversed driving car.
-The full suite passes 34 tests. The production build's GLBs and manifest match
-the native source export.
+The original passenger pass passed 34 tests. The current pass adds tests of
+both operator sightlines, cab floors, guillotine-window clearance, HMI active
+dimensions, moving camera anchors and controller response. Current validation
+results and captures are recorded below after review.
 
 Browser review exercised all seven car selections and the seat, door and
 gangway presets. A deterministic simulation advance of 20.8725 m moved the

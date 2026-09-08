@@ -159,17 +159,19 @@ def make_export_scene(asset_name, source_objs, source_depsgraph):
             stats["triangles"] += max(0, len(poly.vertices) - 2)
         stats["meshes"] += 1
         key = tuple(m.name if m else "__none__" for m in mesh.materials)
-        motion = src.parent if src.parent and src.parent.get('doorId') else None
-        motion_id = motion['doorId'] if motion else None
+        motion = src.parent if src.parent and (src.parent.get('doorId') or src.parent.get('cabControlId')) else None
+        motion_id = (motion.get('doorId') or motion.get('cabControlId')) if motion else None
         if motion:
             if motion_id not in moving_parents:
                 parent = bpy.data.objects.new(motion.name, None)
                 root.objects.link(parent)
-                for prop in ('doorId','doorSide','doorCentreLocal','doorTravelX','doorTravelZ'):
-                    parent[prop] = motion[prop]
+                for prop in ('doorId','doorSide','doorCentreLocal','doorTravelX','doorTravelZ','cabControlId','cabControl','carIndex','cabDirection'):
+                    if prop in motion:parent[prop] = motion[prop]
+                parent.matrix_world=motion.matrix_world.copy()
                 parent['sourceCollection'] = motion.users_collection[0].name
                 moving_parents[motion_id] = parent
-            out['doorId'] = motion_id
+            out['motionId'] = motion_id
+            if motion.get('doorId'):out['doorId'] = motion_id
         groups[(source_collection, key, motion_id)].append(out)
         source_by_obj[out.name] = source_collection
         coll_name = source_collection
@@ -199,7 +201,7 @@ def make_export_scene(asset_name, source_objs, source_depsgraph):
     for obj in made:
         collection_name = source_by_obj.get(obj.name, "Uncategorized")
         world = obj.matrix_world.copy()
-        obj.parent = moving_parents.get(obj.get('doorId')) or empties.get(collection_name)
+        obj.parent = moving_parents.get(obj.get('motionId')) or empties.get(collection_name)
         obj.matrix_world = world
     for parent in moving_parents.values():
         parent.parent = empties[parent['sourceCollection']]
@@ -314,7 +316,8 @@ def main():
                 "cars": [{"index": i, "center": float(bpy.data.collections[name]['center_z']),
                     "direction": int(bpy.data.collections[name]['direction']),
                     "floorY": float(bpy.data.collections[name]['floor_y_m']),
-                    "eyeY": float(bpy.data.collections[name]['eye_y_m'])}
+                    "eyeY": float(bpy.data.collections[name]['eye_y_m']),
+                    **({"cabEyeLocal": list(bpy.data.collections[name]['cab_eye_local_m'])} if 'cab_eye_local_m' in bpy.data.collections[name] else {})}
                     for i,name in enumerate(INTERIOR_COLLECTIONS,1) if bpy.data.collections.get(name)],
             }},
         "stations": [

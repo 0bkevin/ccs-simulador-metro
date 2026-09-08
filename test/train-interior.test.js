@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { createTrainInterior } from "../src/train-interior.js";
+import { createTrainCab } from '../src/train-cab.js';
 
 const base = new URL("../public/models/blender/", import.meta.url);
 const manifest = JSON.parse(await fs.readFile(new URL("manifest.json", base), "utf8"));
@@ -19,7 +20,7 @@ test("seven native saloons have floors, curved seating and complete ceiling geom
     const stats = manifest.assets.train.collections[name];
     assert.ok(stats.meshes > 100 && stats.triangles > 10000);
     let root;
-    train.traverse(o => { if (!o.isMesh && o.userData.sourceCollection === name) root = o; });
+    train.traverse(o => { if (!o.isMesh && o.userData.sourceAsset === 'train' && o.userData.sourceCollection === name) root = o; });
     assert.ok(root, name);
     const car = manifest.train.interior.cars[i];
     const ray = new THREE.Raycaster(new THREE.Vector3(.22,car.eyeY,car.center),new THREE.Vector3(0,-1,0));
@@ -67,7 +68,7 @@ test("gangways remain open with continuous floors between all seven cars", () =>
 test("interior camera and lights follow the moving train without exceeding the car envelope", () => {
   const camera=new THREE.PerspectiveCamera();
   const interior=createTrainInterior(train,camera,null,manifest);
-  assert.equal(interior.lights.length,21);
+  assert.equal(interior.lights.length,23);
   for(const car of manifest.train.interior.cars){
     interior.select(car.index);interior.update(0,true);
     const before=camera.position.clone();
@@ -76,9 +77,76 @@ test("interior camera and lights follow the moving train without exceeding the c
     assert.ok(Math.abs(camera.position.x)<.6 && camera.position.y>car.floorY && camera.position.y<3.3);
     interior.move(99);assert.equal(interior.state.travel,7.6);
     interior.move(-99);assert.equal(interior.state.travel,-9.6);
-    assert.ok(interior.lights.filter(l=>l.visible).length<=9);
+    assert.ok(interior.lights.filter(l=>l.visible).length<=10);
   }
   interior.dispose();
+});
+
+test('both operator cabs have a clear eye line, solid floor and correctly sized native HMI', () => {
+  train.updateMatrixWorld(true);
+  for (const car of manifest.train.interior.cars.filter(c=>c.cabEyeLocal)) {
+    assert.ok([1,7].includes(car.index));
+    const [x,y,u]=car.cabEyeLocal;
+    const eye=new THREE.Vector3(x,y,car.center+car.direction*u);
+    const ray=new THREE.Raycaster(eye,new THREE.Vector3(0,0,car.direction),0,2);
+    const glazing=ray.intersectObject(train,true)[0];
+    assert.ok(glazing?.object.material.transparent,'operator looks through the windshield, not opaque desk or wall');
+    for(const longitudinal of [8.42,8.8,9.2,9.55,9.9]) {
+      ray.set(new THREE.Vector3(.50,1.19,car.center+car.direction*longitudinal),new THREE.Vector3(0,-1,0));ray.far=.3;
+      const floor=ray.intersectObject(train,true)[0];
+      assert.ok(floor && Math.abs(floor.point.y-1.07)<.012,'cab footwell has a continuous floor');
+    }
+    for(const side of [-1,1]) {
+      ray.set(new THREE.Vector3(0,2.65,car.center+car.direction*8.67),new THREE.Vector3(side,0,0));ray.far=1.6;
+      const window=ray.intersectObject(train,true)[0];
+      assert.ok(window?.object.material.transparent,'inner trim keeps guillotine windows clear');
+    }
+    let hmi;
+    train.traverse(o=>{if(o.isMesh && /CAF cab HMI active display/.test(o.material.name) && o.userData.sourceCollection===`CAF interior ${String(car.index).padStart(2,'0')}`)hmi=o;});
+    assert.ok(hmi,'native HMI face exported');
+    const bounds=new THREE.Box3().setFromObject(hmi,true),size=bounds.getSize(new THREE.Vector3());
+    assert.ok(Math.abs(size.x-.21133)<.001,'HMI active width matches 10.4-inch 4:3 specification');
+    assert.ok(Math.abs(Math.hypot(size.y,size.z)-.1585)<.001,'inclined HMI keeps its specified active height');
+    const screens=[];
+    train.traverse(o=>{if(o.isMesh && /CAF cab (?:DMI|HMI) active display/.test(o.material.name) && o.userData.sourceCollection===`CAF interior ${String(car.index).padStart(2,'0')}`)screens.push(o);});
+    for(const screen of screens) {
+      const midpoint=new THREE.Box3().setFromObject(screen,true).getCenter(new THREE.Vector3());
+      const positions=screen.geometry.getAttribute('position');
+      for(let i=0;i<positions.count;i++) {
+        const target=new THREE.Vector3().fromBufferAttribute(positions,i).applyMatrix4(screen.matrixWorld).lerp(midpoint,.20);
+        ray.set(eye,target.clone().sub(eye).normalize());ray.far=eye.distanceTo(target)+.01;
+        const visible=ray.intersectObject(train,true)[0];
+        assert.equal(visible?.object.material.name,screen.material.name,'every display corner remains in front of the console skin');
+      }
+    }
+  }
+  assert.equal(manifest.train.interior.cars.filter(c=>c.cabEyeLocal).length,2);
+});
+
+test('operator viewpoints select a driving car and remain attached to either end', () => {
+  const camera=new THREE.PerspectiveCamera();const interior=createTrainInterior(train,camera,null,manifest);
+  for(const [selected,expected] of [[2,1],[6,7]]) {
+    interior.select(selected,'operator');interior.update(0,true);
+    assert.equal(interior.state.carIndex,expected);
+    const car=manifest.train.interior.cars[expected-1],before=camera.position.clone();
+    assert.ok(camera.getWorldDirection(new THREE.Vector3()).z*car.direction>.98);
+    interior.move(-9);assert.equal(interior.state.travel,car.cabEyeLocal[2],'passenger travel slider cannot move through the cab wall');
+    interior.update(220,true);assert.ok(Math.abs(camera.position.z-before.z-220)<1e-6);
+    interior.select(expected,'saloon');interior.move(-4);assert.equal(interior.state.travel,-4);
+  }
+  interior.dispose();
+});
+
+test('native master controller follows traction and brake and remains neutral while doors are open', () => {
+  const cab=createTrainCab(train);assert.equal(cab.controllers.length,2);
+  const lead=cab.controllers.find(c=>c.carIndex===1),rear=cab.controllers.find(c=>c.carIndex===7);
+  cab.update({throttle:true});assert.ok(lead.object.quaternion.angleTo(lead.rest)>.2);
+  assert.ok(rear.object.quaternion.angleTo(rear.rest)<1e-7,'inactive rear cab stays neutral');
+  cab.update({throttle:true},.5);assert.ok(lead.object.quaternion.angleTo(lead.rest)<1e-7);
+  cab.update({brake:true});assert.ok(lead.object.quaternion.angleTo(lead.rest)>.3);
+  const revision=cab.revision;cab.update({brake:true});assert.equal(cab.revision,revision);
+  cab.update({});assert.ok(lead.object.quaternion.angleTo(lead.rest)<1e-7);
+  cab.dispose();
 });
 
 test("look dragging keeps the same pitch and local direction in either driving car", () => {
