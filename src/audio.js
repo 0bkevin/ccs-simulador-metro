@@ -5,11 +5,12 @@ const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, Number(va
 
 /** Recording playback only. Missing recordings remain silent. */
 export function createMetroAudio({ stops = [], manifest = recordingManifest, contextFactory = null,
-  fetchAudio = (...args) => fetch(...args), now = () => performance.now() / 1000, onStatus = () => {} } = {}) {
+  fetchAudio = (...args) => fetch(...args), now = () => performance.now() / 1000, onStatus = () => {}, loadTimeoutMs = 15000 } = {}) {
   let context, master, limiter, loading = null;
   let enabled = false, disposed = false, ready = false, volume = 0.65;
   let lastUpdate = now(), previous = null, state = {}, generation = 0, resumeRequest = null, finishing = false;
   const buffers = new Map(), loops = new Map(), voices = new Map();
+  const saved = new Map(), live = new Set(), events = new Map();
   const announced = new Set(), failures = new Map(), controller = new AbortController();
   // A WAV filename or a simulator's train name is not proof of a field recording.
   const clips = Object.fromEntries(Object.entries(manifest.clips).filter(([, clip]) =>
@@ -40,20 +41,34 @@ export function createMetroAudio({ stops = [], manifest = recordingManifest, con
       master.connect(limiter).connect(context.destination);
       return true;
     } catch (error) {
+      master?.disconnect(); limiter?.disconnect(); context?.close?.().catch?.(() => {});
+      context = master = limiter = null;
       failures.set('context', error.message); enabled = false; report(); return false;
     }
   }
   async function load() {
     if (loading) return loading;
     loading = Promise.all(Object.entries(clips).filter(([id]) => !buffers.has(id)).map(async ([id, clip]) => {
+      const request = new AbortController();
+      let timer, abort;
       try {
-        const response = await fetchAudio(clip.url, { signal: controller.signal });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const buffer = await context.decodeAudioData(await response.arrayBuffer());
+        const buffer = await Promise.race([
+          (async () => {
+            const response = await fetchAudio(clip.url, { signal: request.signal });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return context.decodeAudioData(await response.arrayBuffer());
+          })(),
+          new Promise((_, reject) => {
+            abort = () => { request.abort(); reject(new Error('Carga cancelada')); };
+            controller.signal.addEventListener('abort', abort, { once: true });
+            timer = setTimeout(() => { request.abort(); reject(new Error('Tiempo de carga agotado')); }, loadTimeoutMs);
+          }),
+        ]);
         if (disposed) return;
         if (!Number.isFinite(buffer.duration) || buffer.duration <= 0) throw new Error('Grabación vacía');
         buffers.set(id, buffer); failures.delete(id);
       } catch (error) { if (!disposed) failures.set(id, error.message); }
+      finally { clearTimeout(timer); controller.signal.removeEventListener('abort', abort); }
     })).then(() => { loading = null; ready = buffers.size > 0; report(); });
     report(); return loading;
   }
@@ -63,19 +78,24 @@ export function createMetroAudio({ stops = [], manifest = recordingManifest, con
     try { voice.source.stop(context.currentTime + fade); } catch { /* already ended */ }
     if (!fade) { voice.source.disconnect(); voice.gain.disconnect(); }
   }
-  function clear() {
-    finishing = false;
-    for (const voice of [...loops.values(), ...voices.values()]) stop(voice);
+  function clear(preserve = false) {
+    if (preserve) {
+      for (const [slot, voice] of voices) {
+        const offset = voice.offset + context.currentTime - voice.startedAt;
+        if (offset < buffers.get(voice.id).duration) saved.set(slot, { id: voice.id, offset, gain: voice.level, cycle: voice.cycle });
+      }
+    } else { finishing = false; saved.clear(); events.clear(); }
+    for (const voice of [...live]) stop(voice);
     loops.clear(); voices.clear();
     if (master) {
       master.gain.cancelScheduledValues(context.currentTime);
       master.gain.setValueAtTime(0, context.currentTime);
     }
   }
-  function play(id, { loop = false, gain = 1, slot = id, finish = false } = {}) {
+  function play(id, { loop = false, gain = 1, slot = id, finish = false, offset = 0, cycle } = {}) {
     const buffer = buffers.get(id);
     const finalClose = finish && enabled && ready && state.started && state.complete && !state.paused && !state.hidden;
-    if (!buffer || (!active() && !finalClose) || volume === 0) return null;
+    if (!buffer || offset >= buffer.duration || (!active() && !finalClose) || volume === 0) return null;
     const collection = loop ? loops : voices;
     stop(collection.get(slot), 0.04);
     const source = context.createBufferSource(), output = context.createGain();
@@ -84,15 +104,44 @@ export function createMetroAudio({ stops = [], manifest = recordingManifest, con
     const level = clamp(clips[id].gain ?? 1) * gain;
     output.gain.value = loop ? 0 : level;
     source.connect(output).connect(master);
-    const voice = { source, gain: output, id };
+    const voice = { source, gain: output, id, offset, cycle, startedAt: context.currentTime, level: gain };
+    live.add(voice);
     collection.set(slot, voice);
     source.onended = () => {
       source.disconnect(); output.disconnect();
+      live.delete(voice);
       if (collection.get(slot) === voice) collection.delete(slot);
     };
-    source.start();
+    source.start(0, offset);
     if (loop) ramp(output.gain, level);
     return voice;
+  }
+  function resumeVoices() {
+    for (const [slot, voice] of saved) play(voice.id, { ...voice, slot, finish: finishing });
+    saved.clear();
+  }
+  function setEvent(slot, requested, gain) {
+    if (!requested) { stop(voices.get(slot)); voices.delete(slot); }
+    else if (!events.get(slot)) play(slot, { slot, gain });
+    const voice = voices.get(slot);
+    if (voice) { voice.level = gain; ramp(voice.gain.gain, clamp(clips[voice.id].gain ?? 1) * gain); }
+    events.set(slot, requested);
+  }
+  function syncDoors(finish = false) {
+    if ('doorAudio' in state) {
+      const cue = state.doorAudio, voice = voices.get('doors');
+      if (!cue) { stop(voice); voices.delete('doors'); return; }
+      const offset = cue.offset || 0;
+      // Seek only when the animation and audio clocks diverge (pause, slow frame,
+      // reversal or enabling sound mid-cycle). Source rate and pitch stay intact.
+      if (!voice || voice.cycle !== cue.cycle || voice.id !== cue.id ||
+          Math.abs(voice.offset + context.currentTime - voice.startedAt - offset) > 0.2) {
+        stop(voice); voices.delete('doors');
+        play(cue.id, { slot: 'doors', finish, offset, cycle: cue.cycle });
+      }
+    } else if (previous?.started && Boolean(state.doorsOpen) !== Boolean(previous.doorsOpen)) {
+      play(state.doorsOpen ? 'doors-open' : 'doors-close', { slot: 'doors', finish });
+    }
   }
   function setLoop(slot, id, gain) {
     let voice = loops.get(slot);
@@ -105,16 +154,18 @@ export function createMetroAudio({ stops = [], manifest = recordingManifest, con
   function update(dt, next = {}) {
     state = { ...next }; lastUpdate = now();
     if (disposed) return;
-    if (!state.started || state.paused || state.hidden || !enabled) {
-      clear(); previous = { ...state }; return;
+    if (!state.started || !enabled) { clear(); previous = { ...state }; return; }
+    if (state.paused || state.hidden) {
+      clear(true); return;
     }
     // The simulation completes as soon as the last close command is accepted.
     // Let that physical door cycle and the final station message finish normally.
     if (state.complete) {
       if (!previous?.complete && previous?.started && !previous.paused && previous.doorsOpen && !state.doorsOpen) {
         finishing = true;
-        play('doors-close', { slot: 'doors', finish: true });
       }
+      if (state.doorAudio) finishing = true;
+      if (finishing) { resumeVoices(); syncDoors(true); }
       for (const voice of loops.values()) stop(voice);
       loops.clear();
       for (const [slot, voice] of voices) {
@@ -125,17 +176,17 @@ export function createMetroAudio({ stops = [], manifest = recordingManifest, con
       previous = { ...state }; return;
     }
     if (!active()) { previous = { ...state }; return; }
+    resumeVoices();
     if (context.state === 'suspended' && !resumeRequest && !context.startRendering) {
       resumeRequest = context.resume().catch(error => {
-        failures.set('context', error.message); enabled = false; report();
+        failures.set('context', error.message); enabled = false; clear(); report();
       }).finally(() => { resumeRequest = null; });
     }
     const speed = clamp(state.speed, 0, 18), stopped = speed <= 0.04;
     const wasActive = previous?.started && !previous.paused && !previous.hidden && !previous.complete;
-    if (previous && Boolean(state.doorsOpen) !== Boolean(previous.doorsOpen) && wasActive) {
-      play(state.doorsOpen ? 'doors-open' : 'doors-close', { slot: 'doors' });
-    }
-    if (stopped && (previous?.speed || 0) > 0.04 && wasActive) {
+    syncDoors();
+    if (stopped && (previous?.speed || 0) > 0.04 && wasActive && !previous.missed &&
+        (state.brake || state.emergency || previous.brake || previous.emergency)) {
       play('brake-release', { slot: 'brake-release' });
     }
     // target advances at door close, so resolve the station from physical position.
@@ -146,12 +197,13 @@ export function createMetroAudio({ stops = [], manifest = recordingManifest, con
     const duck = voices.has('announcement') ? 0.32 : 1;
     const exterior = ['exterior', 'platform'].includes(state.cameraMode || state.camera);
     ramp(master.gain, volume * (exterior ? 0.75 : 1));
-    setLoop('idle', 'idle', (state.doorsOpen ? 0.45 : 0.3) * duck);
     setLoop('rolling', 'rolling', stopped ? 0 : (0.15 + speed / 18 * 0.55) * duck);
-    setLoop('traction', 'traction', !stopped && state.throttle && !state.doorsOpen ? 0.45 * duck : 0);
-    setLoop('braking', 'braking', !stopped && (state.brake || state.emergency) ? 0.4 * duck : 0);
-    const ambience = station && state.doorsOpen ? manifest.stations[station.id]?.ambience : null;
-    setLoop('station', ambience, ambience ? 0.45 * duck : 0);
+    const doorFraction = clamp(state.doorFraction ?? (state.doorsOpen ? 1 : 0));
+    const braking = !stopped && Boolean(state.brake || state.emergency);
+    setEvent('traction', !stopped && Boolean(state.throttle) && !braking && !state.missed && !state.doorsOpen && doorFraction < 0.001, 0.45 * duck);
+    setEvent('braking', braking, 0.4 * duck);
+    const ambience = station && stopped && !state.missed && doorFraction > 0 ? manifest.stations[station.id]?.ambience : null;
+    setLoop('station', ambience, ambience ? 0.45 * duck * doorFraction : 0);
     previous = { ...state };
   }
   async function setEnabled(value) {
@@ -167,7 +219,7 @@ export function createMetroAudio({ stops = [], manifest = recordingManifest, con
       enabled = ready; previous = null; report(); return enabled;
     } catch (error) {
       if (!disposed && request === generation) {
-        failures.set('context', error.message); enabled = false; report();
+        failures.set('context', error.message); enabled = false; clear(); report();
       }
       return false;
     }

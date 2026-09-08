@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createMetroAudio } from '../src/audio.js';
+import { createTrainDoors, recordedCafDoorTiming } from '../src/train-doors.js';
 
 const ids = ['idle', 'rolling', 'traction', 'braking', 'brake-release', 'emergency-brake', 'doors-open', 'doors-close', 'arrival-a', 'arrival-b', 'ambience-a', 'ambience-b'];
 const manifest = {
@@ -18,7 +19,7 @@ function setup(options = {}) {
     createGain: () => ({ ...node(), gain: param() }),
     createDynamicsCompressor: () => ({ ...node(), ...Object.fromEntries(['threshold', 'knee', 'ratio', 'attack', 'release'].map(k => [k, param()])) }),
     createBufferSource() {
-      const source = { ...node(), start() { this.started = true; }, stop() { this.stopped = true; this.onended?.(); } };
+      const source = { ...node(), start(when = 0, offset = 0) { this.started = true; this.offset = offset; }, stop() { this.stopped = true; this.onended?.(); } };
       sources.push(source); return source;
     },
     async decodeAudioData(id) { return { id, duration: 3 }; },
@@ -77,16 +78,74 @@ test('pause, tab hiding, mute, completion and disposal stop all live sources', a
   }
 });
 
-test('door one-shots fire only on real transitions, without replaying on resume', async () => {
+test('pause resumes interrupted doors and announcements at their saved offsets', async () => {
   const t = setup(); await t.engine.setEnabled(true); t.engine.update(0.05, base);
   const closed = { ...base, doorsOpen: false };
   t.engine.update(0.05, closed); t.engine.update(0.05, closed);
   assert.equal(t.played('doors-close').length, 1);
+  t.context.currentTime = 1;
+  t.engine.update(0.05, { ...closed, paused: true });
+  t.context.currentTime = 8;
   t.engine.update(0.05, { ...closed, paused: true }); t.engine.update(0.05, closed);
-  assert.equal(t.played('doors-close').length, 1);
-  assert.equal(t.played('arrival-a').length, 1);
+  assert.equal(t.played('doors-close').length, 2);
+  assert.equal(t.played('arrival-a').length, 2);
+  assert.equal(t.played('doors-close')[1].offset, 1);
+  assert.equal(t.played('arrival-a')[1].offset, 1);
   t.engine.update(0.05, base);
   assert.equal(t.played('doors-open').length, 1);
+  t.engine.dispose();
+});
+
+test('brakes override traction and movement events never loop or restart while held', async () => {
+  const t = setup(); await t.engine.setEnabled(true);
+  const moving = { ...base, position: 200, speed: 8, doorsOpen: false, throttle: true };
+  t.engine.update(0, moving);
+  assert.equal(t.played('traction')[0].loop, false);
+  t.played('traction')[0].onended();
+  t.context.currentTime = 20; t.engine.update(0.05, moving);
+  assert.equal(t.played('traction').length, 1);
+  t.engine.update(0.05, { ...moving, brake: true });
+  assert.ok(!t.engine.status().playing.includes('traction'));
+  assert.equal(t.played('braking')[0].loop, false);
+  t.played('braking')[0].onended(); t.engine.update(0.05, { ...moving, emergency: true });
+  assert.equal(t.played('braking').length, 1);
+  t.engine.dispose();
+});
+
+test('station ambience follows the physical leaves and never layers Altamira over another station', async () => {
+  const t = setup(); await t.engine.setEnabled(true);
+  t.engine.update(0, base);
+  t.engine.update(0.05, { ...base, doorsOpen: false, doorFraction: 1 });
+  assert.ok(t.engine.status().playing.includes('station'), 'warning leaves the platform audible');
+  assert.equal(t.played('idle').length, 0, 'Altamira surroundings are not a universal cab hum');
+  t.engine.update(0.05, { ...base, doorsOpen: false, doorFraction: 0.5 });
+  assert.ok(t.engine.status().playing.includes('station'));
+  t.engine.update(0.05, { ...base, doorsOpen: false, doorFraction: 0 });
+  assert.ok(!t.engine.status().playing.includes('station'));
+  t.engine.dispose();
+});
+
+test('a coasting stop or recovery does not invent a brake-release event', async () => {
+  const t = setup(); await t.engine.setEnabled(true);
+  const moving = { ...base, position: 200, speed: 1, doorsOpen: false };
+  t.engine.update(0, moving); t.engine.update(0.05, { ...moving, speed: 0 });
+  assert.equal(t.played('brake-release').length, 0);
+  t.engine.update(0.05, { ...moving, brake: true, missed: true }); t.engine.update(0.05, base);
+  assert.equal(t.played('brake-release').length, 0);
+  t.engine.dispose();
+});
+
+test('a stalled download times out without blocking usable recordings and can retry', async () => {
+  let stalled = true;
+  const t = setup({ loadTimeoutMs: 20, fetchAudio: async url => {
+    if (url === 'rolling' && stalled) return new Promise(() => {});
+    return { ok: true, arrayBuffer: async () => url };
+  } });
+  assert.equal(await t.engine.setEnabled(true), true);
+  assert.equal(t.engine.status().loading, false);
+  assert.deepEqual(t.engine.status().failed, ['rolling']);
+  stalled = false; await t.engine.setEnabled(true);
+  assert.deepEqual(t.engine.status().failed, []);
   t.engine.dispose();
 });
 
@@ -175,5 +234,49 @@ test('final station announcement and recorded closing warning finish after the l
   t.played('arrival-b')[0].onended(); t.played('doors-close')[0].onended();
   t.engine.update(0.05, complete);
   assert.deepEqual(t.engine.status().playing, []);
+  t.engine.dispose();
+});
+
+test('final closure and station speech survive backgrounding without replaying from the beginning', async () => {
+  const t = setup(); await t.engine.setEnabled(true);
+  const last = { ...base, position: 510, target: 1 };
+  t.engine.update(0, last);
+  const complete = { ...last, doorsOpen: false, complete: true };
+  t.engine.update(0, complete);
+  t.context.currentTime = 0.7; t.engine.update(0, { ...complete, hidden: true });
+  t.context.currentTime = 10; t.engine.update(0, complete);
+  assert.equal(t.played('arrival-b').at(-1).offset, 0.7);
+  assert.equal(t.played('doors-close').at(-1).offset, 0.7);
+  t.engine.dispose();
+});
+
+test('physical door cues survive slow frames, mute and reversal and reset restores an open train', async () => {
+  const doors = createTrainDoors({ traverse() {} }, recordedCafDoorTiming);
+  const t = setup();
+  t.context.decodeAudioData = async id => ({ id, duration: id === 'doors-close' ? 6.4 : 3 });
+  const state = () => ({ ...base, doorsOpen: false, doorFraction: doors.fraction, doorAudio: doors.audio });
+  doors.update(0, base); await t.engine.setEnabled(true);
+  t.engine.update(0, { ...base, doorFraction: 1, doorAudio: null });
+  doors.update(0, state()); t.engine.update(0, state());
+  for (let frame = 0; frame < 16; frame++) {
+    t.context.currentTime += 0.2; doors.update(0.2, state()); t.engine.update(0.2, state());
+  }
+  assert.equal(doors.fraction, 1);
+  assert.equal(t.played('doors-close').length, 1, 'no repeated seeks at 5 FPS');
+  doors.update(0, base); t.engine.update(0, { ...state(), doorsOpen: true });
+  assert.equal(doors.audio, null);
+  assert.equal(t.played('doors-open').length, 0, 'reopening during warning moves no leaves');
+  assert.ok(!t.engine.status().playing.includes('doors'));
+  doors.update(0, state()); t.engine.update(0, state());
+  await t.engine.setEnabled(false);
+  doors.update(4.8, state()); t.context.currentTime += 4.8;
+  assert.ok(Math.abs(doors.fraction - 0.5) < 1e-9);
+  await t.engine.setEnabled(true); t.engine.update(0, state());
+  assert.ok(Math.abs(t.played('doors-close').at(-1).offset - 4.8) < 1e-9);
+  doors.update(1.6, state()); t.context.currentTime += 1.6; t.engine.update(0, state());
+  assert.equal(doors.fraction, 0); assert.equal(doors.audio, null);
+  assert.ok(!t.engine.status().playing.includes('doors'));
+  doors.reset(base);
+  assert.equal(doors.fraction, 1); assert.equal(doors.audio, null); assert.equal(doors.warning, false);
   t.engine.dispose();
 });

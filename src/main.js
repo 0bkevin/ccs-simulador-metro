@@ -47,7 +47,7 @@ app.append(renderer.domElement);
 const world = createWorld(THREE, renderer, data, blenderAssets);
 world.resize(innerWidth, innerHeight);
 const sim = createSimulation(data, { routeEnd: getTunnelTravelRange(data.length - 1).max - 5 });
-const metroAudio = createMetroAudio({ stops: data });
+const metroAudio = createMetroAudio({ stops: data, onStatus: syncAudioButton });
 window.__metro = {
   world,
   sim,
@@ -147,6 +147,23 @@ const cameraModes = ["platform", "exterior", "forward", "interior"];
 const cameraLabels = { platform: "ANDÉN", exterior: "EXTERIOR", forward: "MARCHA", interior: "INTERIOR" };
 $("camera").textContent = "VISTA: ANDÉN";
 let soundOn = false;
+let soundRequest = 0;
+function syncAudioButton(status) {
+  soundOn = status.enabled;
+  $("sound").textContent = !soundOn ? "SONIDO" : status.loading ? "CARGANDO AUDIO…" : "SONIDO ON";
+  $("sound").setAttribute("aria-pressed", String(soundOn));
+}
+function updateAudio(dt = 0, state = sim.state) {
+  metroAudio.update(dt, { ...state, hidden: document.hidden, doorFraction: world.doorFraction,
+    doorAudio: world.doors.audio, throttle: throttle && world.doorFraction < 0.001,
+    brake, emergency, cameraMode: cameraModes[cameraMode] });
+}
+function togglePause() {
+  sim.pause();
+  last = performance.now();
+  updateAudio();
+  toast(sim.state.paused ? "Pausa" : "Continuar");
+}
 let sourcePaused = false;
 let sourceOpen = false;
 let lastComplete = false;
@@ -161,6 +178,7 @@ function inspectStation(index = world.activeStation, kind = "platform") {
     inspectionPaused = sim.state.paused;
     setInputState(false); emergency = false;
     sim.pause(true);
+    updateAudio();
   }
   const view = world.inspectStation(index, kind);
   const station = stationViews[view.index];
@@ -187,6 +205,8 @@ function leaveStation() {
   ui.classList.remove("station-inspecting");
   interiorPanel.hidden = cameraModes[cameraMode] !== "interior";
   sim.pause(inspectionPaused);
+  last = performance.now();
+  updateAudio();
 }
 stationSelect.onchange = () => inspectStation(Number(stationSelect.value));
 stationPanel.querySelectorAll("[data-station-view]").forEach(button => {
@@ -255,6 +275,9 @@ function toggleDoors() {
   if (sourceOpen || world.inspection) return;
   const old = sim.state;
   const next = sim.toggleDoors();
+  if (old.doorsOpen !== next.doorsOpen) last = performance.now();
+  world.doors.update(0, next);
+  updateAudio(0, next);
   if (old.doorsOpen !== next.doorsOpen)
     toast(next.doorsOpen ? "Abriendo puertas del andén" : "Cerrando puertas");
   else if (old.paused) toast("Continúa el servicio para accionar las puertas");
@@ -269,7 +292,7 @@ function openSources() {
   emergency = false;
   sourcePaused = sim.state.paused;
   sim.pause(true);
-  metroAudio.update(0, { ...sim.state, paused: true });
+  updateAudio();
   sourceOpen = true;
   $("sourceModal").style.display = "grid";
 }
@@ -282,6 +305,8 @@ function closeSources() {
   $("realFrame").src = "";
   $("realFrame").style.display = "none";
   sim.pause(sourcePaused);
+  last = performance.now();
+  updateAudio();
 }
 
 function resetService() {
@@ -291,6 +316,9 @@ function resetService() {
   selectCamera(0);
   metroAudio.reset();
   const state = sim.reset();
+  world.doors.reset(sim.state);
+  last = performance.now();
+  updateAudio();
   $("intro").style.display = "none";
   $("complete").style.display = "none";
   lastComplete = false;
@@ -334,8 +362,7 @@ function command(event) {
     selectCamera((cameraMode + 1) % cameraModes.length);
   }
   if (event.code === "KeyP") {
-    sim.pause();
-    toast(sim.state.paused ? "Pausa" : "Continuar");
+    togglePause();
   }
   if (event.code === "KeyR") resetService();
 }
@@ -351,28 +378,30 @@ addEventListener("blur", () => {
   setInputState(false);
   emergency = false;
   sim.pause(true);
-  metroAudio.update(0, sim.state);
+  updateAudio();
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     setInputState(false);
     emergency = false;
     sim.pause(true);
-    metroAudio.update(0, { ...sim.state, hidden: true });
+    updateAudio();
+    audioReview.querySelectorAll("audio").forEach(player => player.pause());
+    $("realFrame").src = "";
+    $("realFrame").style.display = "none";
   }
 });
 addEventListener("pagehide", () => metroAudio.update(0, { ...sim.state, hidden: true }));
 
 $("start").onclick = () => {
   sim.start();
+  last = performance.now();
+  updateAudio();
   $("intro").style.display = "none";
   toast("Caño Amarillo · servicio listo");
 };
 $("doors").onclick = toggleDoors;
-$("pause").onclick = () => {
-  sim.pause();
-  toast(sim.state.paused ? "Pausa" : "Continuar");
-};
+$("pause").onclick = togglePause;
 $("recover").onclick = () => {
   sim.recover();
   toast("Tren recuperado · penalización aplicada");
@@ -395,15 +424,15 @@ $("inspectStationsIntro").onclick = () => {
 };
 $("sound").setAttribute("aria-pressed", "false");
 $("sound").onclick = async () => {
+  const request = ++soundRequest;
   const requested = !soundOn;
   soundOn = requested;
   $("sound").textContent = requested ? "CARGANDO AUDIO…" : "SONIDO";
   $("sound").setAttribute("aria-pressed", String(requested));
   await metroAudio.setEnabled(requested);
+  if (request !== soundRequest) return;
   const status = metroAudio.status();
-  soundOn = status.enabled;
-  $("sound").textContent = status.loading ? "CARGANDO AUDIO…" : soundOn ? "SONIDO ON" : "SONIDO";
-  $("sound").setAttribute("aria-pressed", String(soundOn));
+  syncAudioButton(status);
   if (requested && !status.loading && !soundOn) {
     toast(status.error || (status.total ? "No se pudo cargar el audio. Pulsa SONIDO para reintentar." : "Grabaciones originales pendientes · consulta FUENTES"));
   } else if (soundOn && status.failed.length) {
@@ -462,11 +491,12 @@ function update(now) {
     requestAnimationFrame(update);
     return;
   }
-  const dt = Math.min((now - last) / 1000, 0.05);
+  const elapsed = Math.max(0, (now - last) / 1000);
+  const dt = Math.min(elapsed, 0.05);
   last = now;
   const state = sim.tick(dt, { throttle: throttle && world.doorFraction < 0.001, brake, emergency });
   if (state.speed <= 0.01) emergency = false;
-  world.update(state.paused ? 0 : dt, state.position, {
+  world.update(state.paused ? 0 : elapsed, state.position, {
     doorsOpen: state.doorsOpen,
     doorSide: state.doorSide,
     speed: state.speed,
@@ -475,7 +505,7 @@ function update(now) {
     emergency,
   });
   const doorClosed = world.doorFraction < 0.001;
-  metroAudio.update(dt, { ...state, throttle: throttle && doorClosed, brake, emergency, cameraMode: cameraModes[cameraMode] });
+  updateAudio(dt, state);
   const target = data[state.target];
   const kmh = Math.round(state.speed * 3.6);
   $("speed").textContent = String(kmh).padStart(2, "0");
