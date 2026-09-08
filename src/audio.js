@@ -158,6 +158,14 @@ export function createMetroAudio({ stops = [], manifest = recordingManifest, con
     if (state.paused || state.hidden) {
       clear(true); return;
     }
+    if (ready && context.state === 'suspended' && !resumeRequest && !context.startRendering) {
+      const request = generation;
+      resumeRequest = context.resume().catch(error => {
+        if (!disposed && request === generation) {
+          failures.set('context', error.message); enabled = false; clear(); report();
+        }
+      }).finally(() => { resumeRequest = null; });
+    }
     // The simulation completes as soon as the last close command is accepted.
     // Let that physical door cycle and the final station message finish normally.
     if (state.complete) {
@@ -177,11 +185,6 @@ export function createMetroAudio({ stops = [], manifest = recordingManifest, con
     }
     if (!active()) { previous = { ...state }; return; }
     resumeVoices();
-    if (context.state === 'suspended' && !resumeRequest && !context.startRendering) {
-      resumeRequest = context.resume().catch(error => {
-        failures.set('context', error.message); enabled = false; clear(); report();
-      }).finally(() => { resumeRequest = null; });
-    }
     const speed = clamp(state.speed, 0, 18), stopped = speed <= 0.04;
     const wasActive = previous?.started && !previous.paused && !previous.hidden && !previous.complete;
     syncDoors();

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createMetroAudio } from '../src/audio.js';
 import { createTrainDoors, recordedCafDoorTiming } from '../src/train-doors.js';
+import { createSimulation } from '../src/simulation.js';
 
 const ids = ['idle', 'rolling', 'traction', 'braking', 'brake-release', 'emergency-brake', 'doors-open', 'doors-close', 'arrival-a', 'arrival-b', 'ambience-a', 'ambience-b'];
 const manifest = {
@@ -278,5 +279,55 @@ test('physical door cues survive slow frames, mute and reversal and reset restor
   assert.ok(!t.engine.status().playing.includes('doors'));
   doors.reset(base);
   assert.equal(doors.fraction, 1); assert.equal(doors.audio, null); assert.equal(doors.warning, false);
+  t.engine.dispose();
+});
+
+test('all five actual stops announce exactly once during a complete simulated service', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { recordingManifest } = await import('../src/audio-recordings.js');
+  const route = JSON.parse(await readFile(new URL('../public/models/blender/manifest.json', import.meta.url))).stations;
+  const sim = createSimulation(route).start();
+  const doors = createTrainDoors({ traverse() {} }, recordedCafDoorTiming);
+  const t = setup({ stops: route, manifest: recordingManifest });
+  t.context.decodeAudioData = async url => {
+    const [id, clip] = Object.entries(recordingManifest.clips).find(([, c]) => c.url === url);
+    return { id, duration: clip.end - clip.start };
+  };
+  await t.engine.setEnabled(true); doors.reset(sim.state);
+  for (let frame = 0; frame < 20000; frame++) {
+    let s = sim.state;
+    const distance = route[s.target].distance - s.position;
+    if (s.doorsOpen && s.dwell === 0) sim.setDoors(false);
+    else if (!s.doorsOpen && s.speed <= 0.04 && Math.abs(distance) <= 12) sim.setDoors(true);
+    const brake = distance <= s.speed * s.speed / 5 + 2;
+    const throttle = !brake && doors.fraction === 0;
+    s = sim.tick(0.05, { throttle, brake });
+    doors.update(0.05, s); t.context.currentTime += 0.05;
+    t.engine.update(0.05, { ...s, throttle, brake, doorFraction: doors.fraction, doorAudio: doors.audio });
+    assert.equal(s.missed, false);
+    if (s.complete && doors.fraction === 0) break;
+  }
+  assert.equal(sim.state.complete, true);
+  assert.equal(sim.state.serviceCount, 5);
+  for (const stop of route) {
+    assert.equal(t.played(`arrival-${stop.id}`).length, 1, stop.id);
+    assert.ok(t.played(`ambience-${stop.id}`).length > 0, stop.id);
+  }
+  t.engine.dispose();
+});
+
+test('final-stop playback resumes a suspended audio device and an obsolete failure cannot disable a newer activation', async () => {
+  const t = setup(); await t.engine.setEnabled(true);
+  t.engine.update(0, base); t.engine.update(0, { ...base, doorsOpen: false, complete: true });
+  t.context.state = 'suspended'; let reject;
+  t.context.resume = () => new Promise((_, fail) => { reject = fail; });
+  t.engine.update(0, { ...base, doorsOpen: false, complete: true });
+  assert.equal(typeof reject, 'function', 'completed services must resume the audio device too');
+  await t.engine.setEnabled(false);
+  t.context.resume = async () => { t.context.state = 'running'; };
+  await t.engine.setEnabled(true);
+  reject(new Error('Obsolete device request')); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(t.engine.status().enabled, true);
+  assert.equal(t.engine.status().error, null);
   t.engine.dispose();
 });
