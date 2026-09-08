@@ -1,3 +1,4 @@
+import study from '../public/models/station-specs.json' with { type: 'json' };
 /**
  * Ruta jugable comprimida de la Línea 1 del Metro de Caracas.
  *
@@ -20,7 +21,7 @@ export const lineInfo = {
 const red = lineInfo.color;
 
 // Oeste → este. Distancias jugables redondeadas para una partida manejable.
-export const stations = [
+const routeDescriptions = [
   { id: 'cano-amarillo', name: 'Caño Amarillo', distance: 0, color: red, type: 'elevated', platformLayout: 'side', railCenters: [0, 4], interchange: null, detail: 'Estación elevada junto al antiguo eje ferroviario Caracas–La Guaira, con cubierta reticulada amarilla y andenes laterales.' },
   { id: 'capitolio', name: 'Capitolio', distance: 900, color: red, type: 'subterránea', platformLayout: 'side', railCenters: [0, 4], interchange: 'Conexión peatonal con El Silencio (Línea 2)', detail: 'Estación profunda del centro con mezzanina y conexión peatonal hacia El Silencio.' },
   { id: 'bellas-artes', name: 'Bellas Artes', distance: 1800, color: red, type: 'subterránea', platformLayout: 'island', railCenters: [0, 10], interchange: null, detail: 'Estación profunda con andén central bajo el eje cultural de Bellas Artes.' },
@@ -28,4 +29,5 @@ export const stations = [
   { id: 'altamira', name: 'Altamira', distance: 3900, color: red, type: 'subterránea', platformLayout: 'island', railCenters: [0, 10], interchange: null, detail: 'Estación de tres niveles bajo la plaza y avenida Francisco de Miranda, con andén central y mezzanina.' },
 ];
 
+export const stations = routeDescriptions.map((station, index) => ({ ...station, ...study.stations[index] }));
 export default stations;

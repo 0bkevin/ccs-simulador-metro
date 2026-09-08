@@ -61,7 +61,7 @@ test("la ruta jugable conserva el orden oeste–este de las cinco estaciones", (
     stations.map((station) => station.name),
     ["Caño Amarillo", "Capitolio", "Bellas Artes", "Plaza Venezuela", "Altamira"],
   );
-  assert.deepEqual(stations.map((station) => station.distance), [0, 900, 1800, 2800, 3900]);
+  assert.deepEqual(stations.map((station) => station.distance), [0, 510, 1060, 1610, 2160]);
 });
 
 test("sirve las cinco estaciones en orden y completa al cerrar en Altamira", () => {

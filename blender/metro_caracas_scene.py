@@ -58,9 +58,11 @@ def setup_world(scene):
     scene.render.image_settings.file_format = "PNG"
     scene.render.film_transparent = False
     scene.view_settings.look = "AgX - Medium High Contrast"
+    scene.unit_settings.system = "METRIC"
+    scene.unit_settings.scale_length = 1.0
     scene["metro_coordinate_up"] = "Y"
     scene["metro_route_axis"] = "Z"
-    scene["metro_station_distances"] = "0,160,320,480,640"
+    scene["metro_station_distances"] = ",".join(str(v) for v in STOPS.values())
     scene["metro_train_cars"] = 7
 
 
@@ -116,21 +118,21 @@ def build_scene():
     station_names = [f"Station {name}" for name in STOPS]
     train_names = [collection.name for collection in train_collections]
     # Workbench gives deterministic, lit geometry QA quickly in headless CI;
-    # the saved native scene remains Eevee-ready for interactive inspection.
+    # actual fixture/material verification is render_station_lighting.py.
     qa_engine = scene.render.engine
     scene.render.engine = "BLENDER_WORKBENCH"
     scene.display.shading.light = "STUDIO"
     scene.display.shading.color_type = "MATERIAL"
     scene.display.shading.show_shadows = True
     scene.display.shading.show_cavity = True
-    visibility(station_names + ["Linea 1 route", "Altamira Plaza entrance", "Bellas Artes cultural context"], False)
+    visibility(station_names + ["Linea 1 route", "Altamira Plaza entrance", "Bellas Artes cultural context", "Caño Amarillo urban context", "Tunnel "], False)
     camera.location = (6.0, 3.3, 13.0)
     render_qa(scene, camera, "train-front.png", (0, 2.0, 2.0))
     camera.location = (15.0, 4.5, -64.0)
     camera_data.lens = 58
     render_qa(scene, camera, "train-side.png", (0, 2.0, -64.0))
 
-    visibility(station_names + ["Linea 1 route", "Altamira Plaza entrance", "Bellas Artes cultural context"], True)
+    visibility(station_names + ["Linea 1 route", "Altamira Plaza entrance", "Bellas Artes cultural context", "Caño Amarillo urban context", "Tunnel "], True)
     visibility(train_names, False)
     camera_data.lens = 25
     for index, (name, distance) in enumerate(STOPS.items(), 1):
@@ -140,7 +142,9 @@ def build_scene():
         render_qa(scene, camera, f"station-{index:02d}-{safe_name}.png", (layout_x, 3.05, distance - 65.0))
 
     visibility(train_names, True)
-    scene.render.engine = qa_engine
+    from station_lighting import setup_station_render, validate_surface_maps
+    setup_station_render(scene)
+    validate_surface_maps()
     camera.location = (6.0, 3.3, 10.0)
     camera_data.lens = 40
     look_at_y_up(camera, (0, 2.0, -1.0))

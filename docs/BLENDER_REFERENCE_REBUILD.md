@@ -94,7 +94,7 @@ station scale claim.
 
 Station finishes and civic context follow [STATION_REFERENCES.md](STATION_REFERENCES.md)
 and its linked primary/architectural references. The playable route uses five
-stations at 0, 160, 320, 480 and 640 m. Those distances are an artificial
+stations at 0, 510, 1060, 1610 and 2160 m. Those distances are an artificial
 compressed gameplay scale and are not survey kilometreage.
 
 Local source-only station references include [`Caño Amarillo`](../blender/references/cano-amarillo-station.jpg), [`Capitolio`](../blender/references/capitolio-07.jpg), [`Bellas Artes`](../blender/references/bellas-artes-09.jpg), [`Plaza Venezuela`](../blender/references/plaza-venezuela-l1-01.jpg), and [`Altamira`](../blender/references/altamira-03.jpg). The files are reference material only and are never loaded by the browser.

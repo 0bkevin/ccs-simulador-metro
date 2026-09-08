@@ -8,6 +8,7 @@ import { createSimulation } from "../src/simulation.js";
 import * as THREE from "three";
 import { createWorld } from "../src/blender-world.js";
 import { getStationView } from "../src/station-views.js";
+import { createBlenderLighting } from "../src/blender-presentation.js";
 
 const base = new URL("../public/models/blender/", import.meta.url);
 const manifest = JSON.parse(await fs.readFile(new URL("manifest.json", base), "utf8"));
@@ -58,9 +59,17 @@ test("in-game station inspection uses native collections and retains the driving
       const visible = [];
       environment.traverse(o => { if (!o.isMesh && o.userData.sourceCollection && o.visible) visible.push(o.userData.sourceCollection); });
       assert.ok(visible.includes(preset.collection), `${index}/${kind}: authored collection visible`);
-      assert.ok(!visible.some(c => c.startsWith("Station ") && c !== preset.collection));
-      const activeLights = [...world.lighting.washes.values()].flat().filter(l => l.visible);
-      assert.equal(activeLights.length, preset.exterior ? 0 : 3);
+      assert.deepEqual(visible.sort(), preset.collections.slice().sort());
+      const activeLights = world.lighting.fixtureLights.filter(l => l.intensity > 0);
+      assert.ok(activeLights.length <= 24, "bounded renderer light budget");
+      if (['plan','section'].includes(kind)) assert.equal(activeLights.length, 0);
+      else if (!preset.exterior) assert.ok(activeLights.length > 0, `${index}/${kind}: actual fixture sources illuminate the model`);
+      for (const light of activeLights) {
+        const source = manifest.lighting.areaLights.find(s => s.fixtureId === light.userData.sourceFixture);
+        assert.ok(source, "the active light exists in the Blender source");
+        assert.equal(source.collection, preset.collection);
+        assert.deepEqual(light.position.toArray(), source.position);
+      }
     }
   }
   world.leaveInspection(); world.update(0, 237);
@@ -71,18 +80,88 @@ test("in-game station inspection uses native collections and retains the driving
   world.dispose();
 });
 
-test("the export retains all fifteen native station area lights and their downward orientation", () => {
+test("each station exports its individual fixture sources, with platform and concourse illumination", () => {
   const lights = manifest.lighting.areaLights;
-  assert.equal(lights.length, 15);
+  assert.equal(new Set(lights.map(l => l.fixtureId)).size, lights.length);
   for (const station of manifest.stations) {
     const local = lights.filter(l => l.collection === station.collection);
-    assert.equal(local.length, 3, station.name);
+    assert.ok(local.length >= 28, station.name);
+    if (station.name !== 'Caño Amarillo') {
+      assert.ok(local.some(l => l.position[1] < 5));
+      assert.ok(local.some(l => l.position[1] > 7));
+    }
     for (const light of local) {
       const direction = new Vector3(0, 0, -1).applyQuaternion(new THREE.Quaternion().fromArray(light.quaternion));
       assert.ok(direction.y < -.999);
       assert.ok(light.position[2] > station.distance - 145 && light.position[2] < station.distance + 5);
       assert.ok(light.width > 0 && light.height > 0 && light.power > 0);
+      assert.match(light.basis, /estimated/);
     }
+  }
+  const plaza = lights.filter(l => l.collection === 'Station Plaza Venezuela');
+  assert.ok(plaza.some(l => l.family === 'recessed downlight' && l.tone === 'warm'));
+  assert.ok(plaza.some(l => l.family === 'continuous platform strip'));
+  assert.ok(!lights.some(l => /diffuse wash|diffuse skylight/.test(l.name)));
+});
+
+test("fixture selection stays at the authored position, separates levels and never lights through the other tunnel bore", () => {
+  const lighting = createBlenderLighting(new THREE.Scene(), null, manifest);
+  for (const [anchor, collection] of [
+    [[5,2.73,2076], 'Station Altamira'], [[5,6.73,2105], 'Station Altamira'],
+    [[0,2.5,145], 'Tunnel cano-amarillo'], [[0,2.5,177], 'Tunnel cano-amarillo'],
+  ]) {
+    lighting.focus(new Vector3(...anchor), collection);
+    const active = lighting.fixtureLights.filter(l => l.intensity > 0);
+    assert.ok(active.length > 0 && active.length <= 24);
+    for (const light of active) {
+      const source = manifest.lighting.areaLights.find(s => s.fixtureId === light.userData.sourceFixture);
+      assert.deepEqual(light.position.toArray(), source.position);
+      assert.deepEqual(light.quaternion.toArray(), source.quaternion);
+      if (collection.startsWith('Tunnel ')) assert.ok(Math.abs(light.position.x - anchor[0]) < 4.2);
+      else assert.ok(light.position.y - anchor[1] < 3.65);
+    }
+    for (const shadow of lighting.shadowLights) {
+      assert.ok(active.some(l => l.userData.sourceFixture === shadow.userData.sourceFixture));
+      assert.ok(shadow.castShadow);
+    }
+  }
+  lighting.dispose();
+});
+
+test("exported fixture sources sit directly below or in front of their modeled fittings", async () => {
+  const environment = (await load('environment')).scene;
+  environment.updateMatrixWorld(true);
+  const ray = new Raycaster(); ray.far = .16;
+  const checked = new Set();
+  for (const light of manifest.lighting.areaLights) {
+    const key = `${light.collection}/${light.family}`;
+    if (checked.has(key)) continue;
+    checked.add(key);
+    let root;
+    environment.traverse(o => { if (!o.isMesh && o.userData.sourceCollection === light.collection) root = o; });
+    assert.ok(root, light.collection);
+    const towardHousing = new Vector3(0,0,1).applyQuaternion(new THREE.Quaternion(...light.quaternion));
+    ray.set(new Vector3(...light.position), towardHousing);
+    assert.ok(ray.intersectObject(root, true).length > 0, `${key}: source must be attached to real fixture geometry`);
+  }
+  const materials = new Map();
+  environment.traverse(o => { if (o.isMesh) for (const m of Array.isArray(o.material) ? o.material : [o.material]) materials.set(m.name,m); });
+  for (const name of ['floor','concrete','granite','steel','bronze','tread','tile_mosaic','tile_ceramic']) {
+    const material = [...materials.values()].find(m => m.name === `L1 architecture / ${name}`);
+    assert.ok(material?.map && material.normalMap && material.roughnessMap, `${name}: packed color, relief and roughness survive export`);
+  }
+});
+
+test("Capitolio's widened vestibules extend the platform without overlapping its floor", async () => {
+  const environment = (await load('environment')).scene;
+  environment.updateMatrixWorld(true);
+  let station;
+  environment.traverse(o => { if (!o.isMesh && o.userData.sourceCollection === 'Station Capitolio') station = o; });
+  const ray = new Raycaster();
+  for (const x of [-8.23,-6.03,9.93,12.23]) {
+    ray.set(new Vector3(x,2.73,426.23),new Vector3(0,-1,0));
+    const floor = ray.intersectObject(station,true).filter(h => Math.abs(h.point.y-1.1)<.0001);
+    assert.equal(floor.length,1,`x=${x}: exactly one floor surface, no coplanar black patches`);
   }
 });
 
@@ -219,4 +298,59 @@ test("the exported passenger body narrows above its waist as in section 2-21", a
   assert.ok(waist > 1.48 && waist < 1.60, `body waist half breadth ${waist}`);
   assert.ok(windowTop > 1.28 && windowTop < 1.41, `window top half breadth ${windowTop}`);
   assert.ok(waist - windowTop > .11, "sides must taper instead of returning to vertical box walls");
+});
+
+test('standard tunnel bores are inward-facing, scaled and clear of the train', async () => {
+  const environment = (await load('environment')).scene;
+  environment.updateMatrixWorld(true);
+  const ray = new Raycaster();
+  for (const [index, station] of manifest.stations.entries()) {
+    let tunnel;
+    environment.traverse(o => { if (!o.isMesh && o.userData.sourceCollection === `Tunnel ${station.id}`) tunnel = o; });
+    assert.ok(tunnel, `${station.name}: native tunnel exists`);
+    const a = station.distance + 5;
+    const end = manifest.stations[index + 1]?.distance - 145 || manifest.scale.route.end;
+    assert.ok(end - a >= 235, 'usable full-size railway sample');
+    // Sample exactly in a structural ring, not the deliberately recessed cell.
+    const ringStart = a + (index === 0 ? 100 : index === 4 ? 0 : 55);
+    const z = ringStart + 16 * .8 + .03;
+    for (const angle of [.30, .75, 1.2, 1.9, 2.45, 2.9]) {
+      ray.set(new Vector3(0, 1.8, z), new Vector3(Math.cos(angle), Math.sin(angle), 0));
+      const hit = ray.intersectObject(tunnel, true)[0];
+      assert.ok(hit, `${station.name}: visible lining from inside at ${angle}`);
+      assert.ok(Math.abs(hit.distance - 2.58) < .02, `${station.name}: 5.16 m clear diameter (${hit.distance})`);
+    }
+    // Rolling-stock width at floor/window/roof levels must fit along the whole
+    // driven line, including the open portal and rectangular transition throats.
+    for (let zz = a + 1; zz < end - 1; zz += 7.3) {
+      for (const [x, y] of [[-1.53,1.75],[1.53,1.75],[-1.37,3],[1.37,3],[-.8,3.8],[.8,3.8]]) {
+        ray.set(new Vector3(x,y,zz), new Vector3(0,0,1));
+        const hit = ray.intersectObject(tunnel, true)[0];
+        assert.ok(!hit || hit.distance > Math.min(6, end-zz), `${station.name}: obstruction at ${x}/${y}/${zz}`);
+      }
+    }
+  }
+});
+
+test('inspection cuts reset and tunnel cameras stay within the playable bore', async () => {
+  const environment = (await load('environment')).scene;
+  const train = (await load('train')).scene;
+  const world = createWorld(THREE, null, manifest.stations, { environment, train, manifest });
+  for (let index = 0; index < 5; index++) {
+    const plan = world.inspectStation(index, 'plan');
+    assert.deepEqual(world.camera.up.toArray(), [1,0,0]);
+    assert.equal(plan.clip.constant, 3.15);
+    const tunnel = world.inspectStation(index, 'tunnel');
+    assert.equal(tunnel.clip, null);
+    const originalTrainZ = train.position.z;
+    world.moveTunnel(manifest.stations[index].distance + 160);
+    assert.equal(train.position.z, originalTrainZ, 'tunnel exploration must not move the train');
+    assert.deepEqual(world.camera.up.toArray(), [0,1,0]);
+  }
+  world.leaveInspection();
+  for (const mode of ['forward','platform','exterior','interior']) {
+    world.setCameraMode(mode); world.update(0, 220);
+    assert.ok(Math.abs(world.camera.position.x) < 1.55, `${mode}: camera inside the train/bore in transit`);
+  }
+  world.dispose();
 });

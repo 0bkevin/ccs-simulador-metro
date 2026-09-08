@@ -119,7 +119,7 @@ Additional original photographs retained under `blender/references/`:
 Platform datum is Y=1.1 m, mezzanine Y=5.1 m, and the modeled Altamira street
 datum Y=9.1 m. The two 4 m offsets interpret the published Altamira description;
 they are not survey evidence for the other stations. The 150 m platform
-envelopes and 160 m game stop spacing remain intentional compression.
+envelopes are retained; the current station/tunnel study replaces the old 160 m stop spacing with 510–550 m steps. See [STATION_ACCURACY_REVIEW.md](STATION_ACCURACY_REVIEW.md).
 
 No authenticated dimensioned construction plans were found for all five
 stations. Exact 1:1 parity therefore remains unverified. The models do not

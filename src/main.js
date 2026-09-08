@@ -1,12 +1,14 @@
 import * as THREE from "three";
 import researchText from "../docs/RESEARCH.md?raw";
 import stationResearchText from "../docs/STATION_REFERENCES.md?raw";
+import stationAccuracyText from "../docs/STATION_ACCURACY_REVIEW.md?raw";
+import { stationMetrics } from "./station-inspection.js";
 import blenderReferenceText from "../docs/BLENDER_REFERENCE_REBUILD.md?raw";
 import stations, { lineInfo } from "./route.js";
 import { createWorld } from "./blender-world.js";
 import { loadBlenderAssets } from "./blender-assets.js";
 import { configureBlenderRenderer } from "./blender-presentation.js";
-import { stationViews } from "./station-views.js";
+import { stationViews, getTunnelRange } from "./station-views.js";
 import { createSimulation } from "./simulation.js";
 import { createMetroAudio, actualRecordings, audioDescription } from "./audio.js";
 import "./style.css";
@@ -64,7 +66,7 @@ ui.innerHTML = `
 <div class="bottom"><div class="hint"><kbd>W</kbd>/<kbd>↑</kbd> tracción &nbsp; <kbd>S</kbd>/<kbd>↓</kbd> freno &nbsp; <kbd>E</kbd> puertas &nbsp; <kbd>Espacio</kbd> emergencia</div><div class="meters"><div class="lever"><button data-a="brake">FRENO</button><button data-a="throttle">TRACCIÓN</button><button data-a="emergency">EMERGENCIA</button></div><div class="speed"><strong id="speed">00</strong><small> km/h</small><div class="bar"><b id="speedbar"></b></div></div></div></div>
 <div class="controls"><button id="doors">PUERTAS</button><button id="pause">PAUSA</button><button id="camera">VISTA: EXTERIOR</button><button id="inspect" class="inspect">INSPECCIONAR TREN</button><button id="inspectStations" class="inspect">INSPECCIONAR ESTACIONES</button><button id="recover">RECUPERAR</button><button id="reset">REINICIAR</button><button id="sound">SONIDO</button><label title="Volumen del audio">VOL <input id="volume" type="range" min="0" max="100" value="65" aria-label="Volumen"></label><button id="share">COMPARTIR</button><button id="sources">FUENTES</button></div>
 <div class="toast" id="toast"></div>
-<div class="overlay" id="intro"><div class="card"><div class="corner">SIMULADOR 01 / CABINA</div><div class="eyebrow">Servicio de pasajeros · turno mañana</div><h1>Línea 1<br>en marcha.</h1><p>Conduce el tren desde Caño Amarillo hasta Altamira. Detente dentro de la zona de parada, abre puertas durante tres segundos y continúa.</p><button class="start" id="start">Abrir cabina</button><button class="secondary" id="inspectIntro">INSPECCIONAR TREN</button><button class="secondary" id="inspectStationsIntro">INSPECCIONAR ESTACIONES</button><p class="fine">Cinco estaciones icónicas en una distancia jugable comprimida. La línea histórica completa tiene ${lineInfo.realStationCount} estaciones.</p></div></div>
+<div class="overlay" id="intro"><div class="card"><div class="corner">SIMULADOR 01 / CABINA</div><div class="eyebrow">Servicio de pasajeros · turno mañana</div><h1>Línea 1<br>en marcha.</h1><p>Conduce el tren desde Caño Amarillo hasta Altamira. Detente dentro de la zona de parada, abre puertas durante tres segundos y continúa.</p><button class="start" id="start">Abrir cabina</button><button class="secondary" id="inspectIntro">INSPECCIONAR TREN</button><button class="secondary" id="inspectStationsIntro">INSPECCIONAR ESTACIONES</button><p class="fine">Cinco estaciones, andenes de 150 m y túneles para conducir. Recorrido abreviado de 2,16 km. La línea histórica completa tiene ${lineInfo.realStationCount} estaciones.</p></div></div>
 <div class="overlay" id="complete" style="display:none"><div class="card"><div class="eyebrow">Servicio finalizado</div><h1>Altamira</h1><p>Has servido las ${data.length} estaciones de este recorrido.</p><p class="scoreline">Puntuación <strong id="finalScore">100</strong></p><button class="start" id="restart">REINICIAR SERVICIO</button><button class="secondary" id="completeSources">VER FUENTES</button></div></div>
 <div class="overlay" id="sourceModal" style="display:none"><div class="card source-card"><button class="corner" id="closeSources">CERRAR ×</button><div class="eyebrow">Documentación</div><h1>Fuentes</h1><p>Investigación sobre diseño, estaciones, trenes y mecánica de la Línea 1. Fuentes primarias consultadas:</p><div class="source-links"><a href="https://openjicareport.jica.go.jp/pdf/11789237_03.pdf" target="_blank" rel="noreferrer">JICA · datos de línea</a><a href="https://www.aschinfraestructuras.com/linea-caracas" target="_blank" rel="noreferrer">ASCH · rehabilitación de vía</a><a href="https://admin.cafmobility.com/uploads/281_CAF_Catalogo_General_ES_601604d06c.pdf" target="_blank" rel="noreferrer">CAF · catálogo</a><a href="https://www.alstom.com/fr/press-releases-news/2005/9/ALSTOM-remporte-un-contrat-cle-en-main-pour-le-Metro-de-Caracas-au-Venezuela-20050916" target="_blank" rel="noreferrer">Alstom · Metro de Caracas</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery1.htm" target="_blank" rel="noreferrer">UrbanRail · Altamira y Bellas Artes</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery2.htm" target="_blank" rel="noreferrer">UrbanRail · Capitolio</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery4.htm" target="_blank" rel="noreferrer">UrbanRail · Plaza Venezuela</a><a href="https://fundaayc.com/2024/07/14/algo-mas-sobre-la-postal-no-411/" target="_blank" rel="noreferrer">Fundación Arquitectura y Ciudad · Altamira</a><a href="https://recyt.fecyt.es/index.php/CyTET/article/download/83795/61863/276024" target="_blank" rel="noreferrer">Bemergui · arquitectura de estaciones</a></div><p><small>La grabación real es una referencia externa. El audio del juego es procedural; no se redistribuye la grabación.</small></p><button class="secondary" id="realListen">ESCUCHAR REFERENCIA REAL CAF/ALSTOM</button><iframe id="realFrame" title="Referencia real del Metro de Caracas" style="display:none;width:100%;aspect-ratio:16/9;border:0;margin-top:1rem" allow="autoplay; encrypted-media" allowfullscreen></iframe><div id="audioSources"></div><pre id="researchText"></pre><pre id="stationResearchText"></pre></div></div>`;
 app.append(ui);
@@ -72,7 +74,7 @@ const stationPanel = document.createElement("section");
 stationPanel.className = "station-review-ui in-game-stations";
 stationPanel.hidden = true;
 stationPanel.setAttribute("aria-label", "Explorar estaciones");
-stationPanel.innerHTML = `<button id="returnToGame" class="back-link">← VOLVER A CONDUCIR</button><div class="review-kicker">EXPLORAR ESTACIÓN · JUEGO EN PAUSA</div><h1 id="gameStationTitle"></h1><p id="gameStationDetail"></p><label>ESTACIÓN <select id="gameStationSelect" aria-label="Estación para explorar"></select></label><div class="review-actions"><button data-station-view="platform">ANDÉN</button><button data-station-view="detail">DETALLE</button><button data-station-view="concourse">MEZZANINA</button><button data-station-view="entrance">ACCESO</button><button data-station-view="south">PLAZA SUR</button></div><p class="review-hint">Arrastra para mirar · rueda para acercarte.<br>Tu recorrido se conserva. Esc para volver.</p>`;
+stationPanel.innerHTML = `<button id="returnToGame" class="back-link">← VOLVER A CONDUCIR</button><div class="review-kicker">EXPLORAR ESTACIÓN · JUEGO EN PAUSA</div><h1 id="gameStationTitle"></h1><p id="gameStationDetail"></p><label>ESTACIÓN <select id="gameStationSelect" aria-label="Estación para explorar"></select></label><div class="review-actions"><button data-station-view="platform">ANDÉN</button><button data-station-view="detail">DETALLE</button><button data-station-view="concourse">MEZZANINA</button><button data-station-view="entrance">ACCESO</button><button data-station-view="south">PLAZA SUR</button><button data-station-view="plan">PLANTA</button><button data-station-view="section">CORTE</button><button data-station-view="tunnel">TÚNEL</button></div><p id="gameStationMetrics" class="station-metrics"></p><label id="gameTunnelTravelLabel" hidden>RECORRER TÚNEL <input id="gameTunnelTravel" type="range" step="1" aria-label="Recorrer túnel en metros"></label><p class="review-hint">Planta y corte: geometría del modelo en metros; medidas de estación estimadas.</p><p class="review-hint">Arrastra para mirar · rueda para acercarte.<br>Tu recorrido se conserva. Esc para volver.</p>`;
 ui.append(stationPanel);
 
 const $ = (id) => ui.querySelector("#" + id);
@@ -85,7 +87,7 @@ data.forEach((station, index) => {
   list.append(item);
 });
 $("researchText").textContent = researchText;
-$("stationResearchText").textContent = stationResearchText;
+$("stationResearchText").textContent = stationAccuracyText + "\n\n" + stationResearchText;
 const modelResearch = document.createElement('pre');
 modelResearch.textContent = blenderReferenceText;
 $("stationResearchText").before(modelResearch);
@@ -137,6 +139,11 @@ function inspectStation(index = world.activeStation, kind = "platform") {
   stationSelect.value = view.index;
   $("gameStationTitle").textContent = station.name;
   $("gameStationDetail").textContent = station.detail;
+  $("gameStationMetrics").textContent = stationMetrics(view.index, view.kind);
+  $("gameTunnelTravelLabel").hidden = view.kind !== "tunnel";
+  const tunnelRange = getTunnelRange(view.index);
+  $("gameTunnelTravel").min = tunnelRange.start + 2; $("gameTunnelTravel").max = tunnelRange.end - 2;
+  $("gameTunnelTravel").value = world.camera.position.z;
   stationPanel.querySelectorAll("[data-station-view]").forEach(button => {
     button.hidden = !view.views.includes(button.dataset.stationView);
     button.classList.toggle("active", button.dataset.stationView === view.kind);
@@ -158,6 +165,7 @@ stationPanel.querySelectorAll("[data-station-view]").forEach(button => {
   button.onclick = () => inspectStation(world.inspection.index, button.dataset.stationView);
 });
 $("returnToGame").onclick = leaveStation;
+$("gameTunnelTravel").oninput = event => world.moveTunnel(event.target.value);
 
 const interiorPanel = document.createElement("section");
 interiorPanel.className = "interior-controls"; interiorPanel.hidden = true;
