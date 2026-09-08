@@ -9,7 +9,7 @@ La aplicación web carga los modelos de Blender exportados a `public/models/blen
 - `W` / `↑`: tracción.
 - `S` / `↓`: freno de servicio.
 - `Espacio`: freno de emergencia; permanece activo hasta detener el tren.
-- `E`: abrir o cerrar las puertas del lado del andén cuando el tren está detenido en la zona de parada. Se conserva el embarque de tres segundos y la tracción espera al cierre completo.
+- `E`: abrir o cerrar las puertas del lado del andén cuando el tren está detenido en la zona de parada. Se conserva el embarque de tres segundos y la tracción espera al aviso grabado de 3,2 segundos y al cierre completo de 3,2 segundos.
 - `P`: pausar o continuar.
 - `C`: cambiar entre vista de conducción, exterior y aérea.
 - `R`: reiniciar el servicio.
@@ -18,7 +18,7 @@ La aplicación web carga los modelos de Blender exportados a `public/models/blen
 
 En la exploración de estaciones, la cámara se detiene ante paredes, escaleras, pilares y vidrio, y permanece dentro del andén o la mezzanina seleccionados. Cambia de nivel con los botones de vista. El túnel conserva un margen antes de sus extremos; planta, corte y accesos mantienen el modelo encuadrado al acercar o arrastrar. Estas protecciones funcionan tanto en el juego como en el visor independiente. Detalles y comprobaciones en [docs/STATION_CAMERA.md](docs/STATION_CAMERA.md).
 
-También hay controles táctiles en pantalla y un control de volumen para el audio procedural. La lista de estaciones se puede desplazar en móvil. El botón `FUENTES` pausa la simulación y abre la investigación completa; al cerrar conserva el estado de pausa anterior.
+También hay controles táctiles en pantalla y un control de volumen para las grabaciones originales. La lista de estaciones se puede desplazar en móvil. El botón `FUENTES` pausa la simulación y abre la investigación completa; al cerrar conserva el estado de pausa anterior.
 
 La revisión individual, los planos buscados, las medidas comprobadas y las estimaciones están en [docs/STATION_ACCURACY_REVIEW.md](docs/STATION_ACCURACY_REVIEW.md). Los túneles tienen 5,16 m de diámetro libre y anillos de 0,80 m según Perri; las conexiones entre estaciones se abrevian, con 360–400 m de vía entre andenes.
 
@@ -28,7 +28,7 @@ Los materiales y las luminarias también se crean en Blender: texturas PBR integ
 
 Las distancias jugables suman 2160 m entre la primera y la última parada. No representan kilometraje real, velocidades operativas ni un perfil de vía. El tren y las estaciones se construyen como geometría nativa de Blender a partir de referencias fotográficas; no son modelos oficiales ni un levantamiento topográfico.
 
-La investigación documenta la Línea 1, su orden de estaciones, 750 V CC por tercer riel, ancho estándar, renovación de vía y material rodante histórico. El juego representa un CAF Serie 6 estilizado de siete coches; sus dimensiones se usan como referencia visual y no como una ficha técnica oficial. El audio del juego es procedural: combina tracción, rodadura, ejes, puertas, freno y HVAC, con volumen ajustable y limitación de picos. Las grabaciones reales se mantienen como referencias externas con su licencia/proveniencia en [docs/AUDIO_SOURCES.md](docs/AUDIO_SOURCES.md); la app ofrece un reproductor hospedado por YouTube para comparación y no redistribuye esos archivos. Consulta también [docs/RESEARCH.md](docs/RESEARCH.md).
+La investigación documenta la Línea 1, su orden de estaciones, 750 V CC por tercer riel, ancho estándar, renovación de vía y material rodante histórico. El juego representa un CAF Serie 6 estilizado de siete coches; sus dimensiones se usan como referencia visual y no como una ficha técnica oficial. El audio reproduce 17 fragmentos de videos públicos del Metro de Caracas: rodadura, salida, frenado, puertas, anuncios de las cinco paradas y ambiente grabado en cada estación. No utiliza síntesis ni voces generadas. Activa `SONIDO` para escucharlo; `FUENTES` permite escuchar cada fragmento y abrir su video original. La procedencia, los intervalos exactos y el estado de los derechos se documentan en [docs/AUDIO_SOURCES.md](docs/AUDIO_SOURCES.md). Consulta también [docs/RESEARCH.md](docs/RESEARCH.md).
 
 ## Desarrollo
 

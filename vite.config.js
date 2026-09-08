@@ -6,6 +6,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(process.cwd(), "index.html"),
+        audioReview: resolve(process.cwd(), "audio-review.html"),
         modelReview: resolve(process.cwd(), "model-review.html"),
         stationReview: resolve(process.cwd(), "station-review.html"),
       },
