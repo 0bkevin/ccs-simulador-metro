@@ -2,7 +2,7 @@
   "schema": "metro-blender-web-export/1",
   "source": {
     "file": "metro_caracas_line1.blend",
-    "sha256": "7f704ad6319a3d668137388dde3c6f5d3280d44f86f77c2f0b578b0ad338cc3d"
+    "sha256": "94f077602c7bafb6c17182412c8e5cfd9b560ef29c8cf0da55436966b5ebe157"
   },
   "coordinateSystem": {
     "up": "Y",
@@ -271,29 +271,29 @@
   "assets": {
     "train": {
       "path": "models/blender/train.glb",
-      "meshes": 10062,
-      "triangles": 1823900,
+      "meshes": 10130,
+      "triangles": 1867766,
       "bounds": {
         "min": [
           -1.55385,
           0.115,
-          -144.63434
+          -144.619
         ],
         "max": [
           1.55385,
           3.924,
-          3.41433
+          3.399
         ],
         "size": [
           3.1077,
           3.809,
-          148.04867
+          148.018
         ]
       },
       "collections": {
         "CAF car 01": {
-          "meshes": 723,
-          "triangles": 199602,
+          "meshes": 757,
+          "triangles": 221535,
           "bounds": {
             "min": [
               -1.55385,
@@ -303,12 +303,12 @@
             "max": [
               1.55385,
               3.924,
-              3.41433
+              3.399
             ],
             "size": [
               3.1077,
               3.809,
-              21.62333
+              21.608
             ]
           }
         },
@@ -418,13 +418,13 @@
           }
         },
         "CAF car 07": {
-          "meshes": 723,
-          "triangles": 199602,
+          "meshes": 757,
+          "triangles": 221535,
           "bounds": {
             "min": [
               -1.55385,
               0.115,
-              -144.63434
+              -144.619
             ],
             "max": [
               1.55385,
@@ -434,7 +434,7 @@
             "size": [
               3.1077,
               3.809,
-              21.62334
+              21.608
             ]
           }
         },

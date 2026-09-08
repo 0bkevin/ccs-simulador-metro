@@ -224,23 +224,27 @@ def build_cab(collection,mats,center_z,direction,helpers):
             for part in (rim,optic):
                 part.rotation_mode='QUATERNION';part.rotation_quaternion=Vector((0,0,1)).rotation_difference(normal)
 
-    # Broad black notch and the protective rack above the low coupling head.
-    notch=smooth([(-.77,.80),(-.69,1.27),(-.54,1.34),(.54,1.34),(.69,1.27),(.77,.80)],2)
-    panel('CAF deep central coupler aperture',notch,mats['black'],.039)
-    box('CAF coupler protective rack',place((0,1.18,9.99)),(1.22,.11,.15),mats['black'],collection,.025)
-    for y in (1.145,1.205):
-        box('CAF rack horizontal rib',place((0,y,10.075)),(1.20,.016,.022),mats['steel'],collection,.006)
-    cyl('CAF coupler longitudinal drawbar',place((0,.77,10.06)),.10,.62,mats['steel'],collection,vertices=32)
-    box('CAF machined coupling face',place((0,.76,10.26)),(.52,.40,.048),mats['copper'],collection,.080)
-    for x,r in ((-.135,.112),(.145,.126)):
-        cyl('CAF coupling socket',place((x,.79,10.288)),r,.010,mats['black'],collection,vertices=48)
-    cyl('CAF male coupling spigot',place((-.135,.79,10.31)),.072,.06,mats['steel'],collection,vertices=32)
-    for x,y in ((0,.96),(0,.57),(-.21,.59),(.21,.98)):
-        cyl('CAF coupling face fastener',place((x,y,10.294)),.015,.009,mats['steel_light'],collection,vertices=12)
-    for a,b in (((.02,.55,10.30),(.17,.43,10.40)),((.17,.43,10.40),(.32,.39,10.37))):
-        beam('CAF red pneumatic hose',place(a),place(b),.025,mats['red'],collection,vertices=16)
-    for a,b in (((-.28,.74,10.17),(-.42,.61,10.19)),((-.42,.61,10.19),(-.39,.42,10.29))):
-        beam('CAF flexible coupling hose',place(a),place(b),.026,mats['black'],collection,vertices=16)
+    # A genuine opening through the lower nose, including the underside of
+    # the loft. Keeping a black front polygon here concealed the drawgear.
+    notch=fillet([(-.78,.74),(-.69,1.25),(-.54,1.34),
+                  (.54,1.34),(.69,1.25),(.78,.74)],.080,10)
+    panel('CAF coupler opening boundary',notch,mats['black'])
+    from coupler_geometry import cut_recess, build_coupler
+    cut_recess(shell,notch,place)
+    # Return surfaces stay behind the cut edge. The bottom is left open.
+    edge=resample(notch,.035);vs=[];fs=[]
+    for i,(x,y) in enumerate(edge):
+        vs.extend((curved((x,y),.001),place((x,y,9.36))))
+    for i,(x,y) in enumerate(edge):
+        j=(i+1)%len(edge)
+        if min(y,edge[j][1])<.835:continue
+        face=(2*i,2*j,2*j+1,2*i+1)
+        fs.append(face if direction>0 else tuple(reversed(face)))
+    lining=mesh('CAF coupler recess inner returns',vs,fs,mats['coupler_cast'],collection)
+    # Thin manufactured returns are two-sided on their physical mesh.
+    solid=lining.modifiers.new('recess wall thickness','SOLIDIFY');solid.thickness=.012
+    box('CAF recessed drawgear bulkhead',place((0,1.075,9.34)),(1.18,.47,.045),mats['coupler_cast'],collection,.008)
+    build_coupler(collection,mats,place,direction,helpers)
 
     # The wiper follows the glazing slope instead of hovering on a plane.
     wiper=[(.23,1.98),(-.62,2.40),(-.96,3.01)]
@@ -394,7 +398,7 @@ def build_cab(collection,mats,center_z,direction,helpers):
     faces=[];assign=[]
     for face in triangles:
         xy=(sum(coords[i].x for i in face)/len(face),sum(coords[i].y for i in face)/len(face))
-        if not contains(xy,OUTLINE):continue
+        if not contains(xy,OUTLINE) or contains(xy,notch):continue
         material=0
         for index,(_,polygon,_) in enumerate(front_layers):
             if contains(xy,polygon):material=index

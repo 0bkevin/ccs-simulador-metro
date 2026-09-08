@@ -1,5 +1,9 @@
 # CAF Serie 6 exterior and door controls
 
+The subsequent [independent exterior audit of 8 September 2026](EXTERIOR_AUDIT.md)
+records remaining lighting, optical assembly, mechanical and marking issues.
+Passing the checks below does not certify every exterior detail as accurate.
+
 The playable simulator and `/model-review.html` load the same native Blender
 export. This pass retains the Caracas CAF delivery appearance of 2010–2011.
 It refines the cab windows and materials and makes the passenger doors operable.
@@ -52,6 +56,44 @@ Refurbished liveries and other Caracas fleets were excluded from this pass.
   Body silver, red paint, black ceramic frit, rubber and glass remain distinct.
   Color values, roughness and transparency are photographic rendering estimates,
   not manufacturer paint codes or measured optical transmission.
+
+## Coupler correction — 8 September 2026
+
+The exposed coupling assembly is rebuilt at both cab ends in
+`blender/coupler_geometry.py`. The delivery photograph shows a machined face
+with a projecting guide cone beside a hollow receiving cup. The former three
+overlapping dark discs are replaced by separate turned surfaces, actual bores,
+a thick cast housing and a supported longitudinal shank. The matching face is
+about 0.51 m wide in this fitted reconstruction. The rear assembly is rotated
+to preserve its handedness when viewed from outside either cab.
+
+The lower nose now has a real opening through its front skin and underside,
+with recessed returns and a drawgear bulkhead. The guard uses stacked channel
+sections and mounting struts. A slender red handle attaches to a lower pivot;
+the old angular red hose is removed. Flexible black and blue lines follow
+continuous bends to fittings alongside the housing.
+
+The visual source is the
+[CAF delivery photograph](https://commons.wikimedia.org/wiki/File:Metro_de_caracas_linea_1.jpg),
+also credited to CAF in INECO's report. Voith's
+[description of the cone-and-cup coupling principle](https://www.voith.com/corp-en/voith-turbo-perspectives/mechanical-engineering-pioneers-at-voith-turbo.html)
+supports the general assembly interpretation; it does not establish the
+supplier or exact coupler model fitted to this Caracas train. Internal
+mechanism, hose routing and installation dimensions remain photo-fitted
+estimates. The model does not simulate mechanical coupling.
+
+The exterior inspector includes an **ENGANCHE** close view at
+`/model-review.html?view=coupler`. A native-GLB regression checks the projecting
+cone, recessed socket and open nose on both ends, alongside the existing door
+and cab-window regressions.
+
+Verified against the rebuilt native file and web export: **60 tests passed**,
+production build succeeded, and both couplers were inspected in the browser.
+Source SHA-256: `94f077602c7bafb6c17182412c8e5cfd9b560ef29c8cf0da55436966b5ebe157`.
+The open cab loft is clipped as a surface rather than using a solid boolean,
+which prevents a reversed-cab cutter cap from covering the rear assembly.
+Final captures: [front coupling](../blender/qa/web-coupler-exterior.jpg) and
+[rear coupling](../blender/qa/web-coupler-rear.jpg).
 
 ## Door operation
 

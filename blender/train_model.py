@@ -57,6 +57,9 @@ def _materials():
         "steel_light": _material("CAF machined bogie edges", (.38, .40, .38), .80, .20),
         "rubber": _material("CAF wheel rubber", (.009, .011, .012), .02, .74),
         "copper": _material("CAF coupler machined metal", (.30, .30, .27), .73, .27),
+        "coupler_face": _material("CAF coupler satin machined face", (.36, .37, .34), .78, .38),
+        "coupler_cast": _material("CAF coupler dark cast steel", (.027, .032, .031), .72, .43),
+        "coupler_blue": _material("CAF coupler blue control hose", (.018, .15, .28), .0, .46),
     }
     glass = _material('CAF passenger transparent glazing', (.16, .25, .28), .05, .16)
     glass.diffuse_color = (.16, .25, .28, .24)

@@ -27,7 +27,7 @@ floor.receiveShadow = true;
 const camera = new THREE.PerspectiveCamera(42, innerWidth / Math.max(1, innerHeight), .1, 2000);
 const controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true; controls.dampingFactor = .075;
 controls.screenSpacePanning = true; controls.minDistance = 1; controls.maxDistance = 1000; controls.maxPolarAngle = Math.PI * .49;
-const buttons = [...document.querySelectorAll("[data-view]")]; const names = { threequarter: "TRES CUARTOS", front: "FRENTE", cab: "VENTANA DE CABINA", doors: "PUERTAS", side: "LATERAL", rear: "TRASERA", full: "TREN COMPLETO" };
+const buttons = [...document.querySelectorAll("[data-view]")]; const names = { threequarter: "TRES CUARTOS", front: "FRENTE", coupler: "ENGANCHE", cab: "VENTANA DE CABINA", doors: "PUERTAS", side: "LATERAL", rear: "TRASERA", full: "TREN COMPLETO" };
 let bounds, frontDoorZ = -.73, activeView = 'threequarter';
 let doors, lastTime = performance.now(), lastRevision = -1, needsRender = true;
 const doorState = { doorsOpen: false, doorSide: -1 };
@@ -51,7 +51,7 @@ function frame(view) {
   controls.enableDamping = false; controls.update();
   const c = bounds.getCenter(new THREE.Vector3()); const s = bounds.getSize(new THREE.Vector3());
   const length = Math.max(s.x, s.z); const height = Math.max(2, s.y); const side = Math.max(4, Math.min(24, length * .22)); let position;
-  camera.fov = view === "front" ? 20 : 42;
+  camera.fov = view === "front" ? 20 : view === "coupler" ? 38 : 42;
   camera.updateProjectionMatrix();
   if (view === "front") {
     position = new THREE.Vector3(0, 2.05, bounds.max.z + 14);
@@ -66,6 +66,7 @@ function frame(view) {
     controls.target.copy(cabTarget);
   }
   else if (view === "rear") { position = new THREE.Vector3(-5.5, 3.1, bounds.min.z - 8); controls.target.set(0, 2.1, bounds.min.z + 2); }
+  else if (view === "coupler") { position = new THREE.Vector3(-1.30, 1.20, 5.12); controls.target.set(0, .98, 3.08); }
   else if (view === "cab") { position = new THREE.Vector3(-5.3, 2.5, 2.05); controls.target.set(-1.1, 2.25, .92); }
   else if (view === "doors") { position = new THREE.Vector3(-5.6, 2.4, frontDoorZ-.07); controls.target.set(-1.3, 2.1, frontDoorZ); }
   else if (view === "side") { position = new THREE.Vector3(19, 2.8, bounds.max.z - 10); controls.target.set(0, 2.1, bounds.max.z - 10); }

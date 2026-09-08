@@ -14,6 +14,26 @@ async function loadTrain() {
 }
 const advance = (doors, state, seconds = 3) => { for (let t = 0; t < seconds; t += .05) doors.update(.05, state); };
 
+test('both native couplers have a projecting cone, recessed cup and an open nose recess', async () => {
+  const train=await loadTrain();train.updateMatrixWorld(true);
+  for (const [center,direction] of [[-7.73,1],[-133.49,-1]]) {
+    function hit(x,y) {
+      const ray=new THREE.Raycaster(new THREE.Vector3(x*direction,y,center+direction*11.72),new THREE.Vector3(0,0,-direction));
+      const result=ray.intersectObject(train,true)[0];
+      assert.ok(result,`coupler surface exists at ${x}, ${y}`);
+      return {z:(result.point.z-center)*direction-.72,material:result.object.material.name};
+    }
+    const face=hit(.21,.932),cone=hit(-.15,.82),cup=hit(.127,.785);
+    assert.match(face.material,/coupler satin machined face/);
+    assert.ok(cone.z-face.z>.065,'guide cone must project ahead of the mating face');
+    assert.ok(face.z-cup.z>.16,'receiving socket must be hollow, not a black disc on the face');
+    for (const x of [-.39,.39]) {
+      const recess=hit(x,1.0);
+      assert.ok(recess.z<9.60,'open nose reveals equipment behind the shell, not a painted aperture');
+    }
+  }
+});
+
 function doorCentresFor(train, car) {
   const centres=new Set();
   train.traverse(o => {
