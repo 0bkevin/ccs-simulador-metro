@@ -81,8 +81,13 @@ OUTLINE=smooth([(-1.27,.83),(-1.42,1.00),(-1.49,1.53),(-1.49,1.99),
                 (0,3.80),(.53,3.77),(.96,3.65),(1.20,3.40),
                 (1.36,2.87),(1.49,1.99),(1.49,1.53),(1.42,1.00),
                 (1.27,.83),(.82,.83),(-.82,.83)],3)
+# The loft, body section and front triangulation must use the SAME boundary.
+# Previously the front alone inserted a centre point across the crown edge;
+# its curved position was 26 cm ahead of the loft's straight chord.
+OUTLINE=resample(OUTLINE,.030)
 YMIN=min(y for x,y in OUTLINE)
 YMAX=max(y for x,y in OUTLINE)
+FRONT_OFFSET=.004
 
 
 @lru_cache(maxsize=32768)
@@ -100,7 +105,13 @@ def depth(x,y):
     # old 0.42m straight rake was the principal cause of the flat bus shape.
     t=max(0,min(1,(y-.83)/(YMAX-.83)))
     rake=1.68*t*t + .12*t
-    q=min(.9999,abs(x)/max(.01,width(y)))
+    # The nose's horizontal bow must not collapse to a tiny radius at the
+    # crown. Fade to a finite breadth above the destination panel, preserving
+    # the windshield/lamp shape and avoiding the former sharp centre spike.
+    crown=max(0,min(1,(y-3.48)/(YMAX-3.48)))
+    crown=crown*crown*(3-2*crown)
+    bow_width=width(y)*(1-crown)+1.05*crown
+    q=min(.9999,abs(x)/max(.01,bow_width))
     roll=.26*(1-math.sqrt(1-q*q))
     return 10.04-rake-roll
 
@@ -125,7 +136,7 @@ def _side_width(z,y):
         fy=y if y<=3.10 else 3.10+(y-3.10)/((1-blend)*ratio+blend)
         fy=max(YMIN+.0001,min(YMAX-.0001,fy))
         ry=fy if fy<=3.10 else 3.10+(fy-3.10)*ratio
-        end=depth(width(fy),fy)
+        end=depth(width(fy),fy)+FRONT_OFFSET
         if 7.35*(1-t)+end*t<z:lo=t
         else:hi=t
     return rear_width(ry)*(1-blend)+width(fy)*blend
@@ -158,7 +169,7 @@ def build_cab(collection,mats,center_z,direction,helpers):
         blend=t*t*(3-2*t)
         for (x,y),(rx,ry) in zip(OUTLINE,rear_section):
             px=rx*(1-blend)+x*blend;py=ry*(1-blend)+y*blend
-            pz=7.35*(1-t)+depth(x,y)*t
+            pz=7.35*(1-t)+(depth(x,y)+FRONT_OFFSET)*t
             verts.append(place((px,py,pz)))
     for k in range(24):
         for i in range(n):
@@ -404,7 +415,7 @@ def build_cab(collection,mats,center_z,direction,helpers):
             if contains(xy,polygon):material=index
         a,b,c=(coords[i] for i in face[:3]);area=(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x)
         faces.append(tuple(reversed(face)) if area*direction<0 else face);assign.append(material)
-    front=mesh('CAF continuous flush nose surface',[curved((p.x,p.y),.004) for p in coords],faces,front_layers[0][2],collection,smooth=True)
+    front=mesh('CAF continuous flush nose surface',[curved((p.x,p.y),FRONT_OFFSET) for p in coords],faces,front_layers[0][2],collection,smooth=True)
     for _,_,mat in front_layers[1:]:front.data.materials.append(mat)
     for p,slot in zip(front.data.polygons,assign):p.material_index=slot
     normals=[]

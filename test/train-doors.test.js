@@ -14,6 +14,26 @@ async function loadTrain() {
 }
 const advance = (doors, state, seconds = 3) => { for (let t = 0; t < seconds; t += .05) doors.update(.05, state); };
 
+test('both cab crowns remain closed across the roof and curved front boundary', async () => {
+  const train=await loadTrain();train.updateMatrixWorld(true);
+  for (const [center,direction] of [[-7.73,1],[-133.49,-1]]) {
+    for (const x of [-.08,-.04,-.02,0,.02,.04,.08]) {
+      let previous;
+      // Sweep the full former slit and the newly shared edge, including its
+      // exact centre. A broad side view missed this narrow triangular hole.
+      for (let step=0;step<=42;step++) {
+        const z=7.95+step*.008;
+        const ray=new THREE.Raycaster(new THREE.Vector3(x,5,center+direction*(z+.72)),new THREE.Vector3(0,-1,0),0,1.4);
+        const hit=ray.intersectObject(train,true)[0];
+        assert.ok(hit && hit.point.y>3.64,`cab ${direction}, crown ${x}, ${z}: continuous exterior skin`);
+        assert.equal(hit.object.material.transparent,false,'the crown is closed metal, not a view through glazing');
+        if(previous!==undefined)assert.ok(Math.abs(hit.point.y-previous)<.025,'no folded spike or step along the crown');
+        previous=hit.point.y;
+      }
+    }
+  }
+});
+
 test('both native couplers have a projecting cone, recessed cup and an open nose recess', async () => {
   const train=await loadTrain();train.updateMatrixWorld(true);
   for (const [center,direction] of [[-7.73,1],[-133.49,-1]]) {

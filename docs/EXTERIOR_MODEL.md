@@ -95,6 +95,28 @@ which prevents a reversed-cab cutter cap from covering the rear assembly.
 Final captures: [front coupling](../blender/qa/web-coupler-exterior.jpg) and
 [rear coupling](../blender/qa/web-coupler-rear.jpg).
 
+## Cab crown closure — 8 September 2026
+
+The narrow triangular opening at the top of each cab was a boundary mismatch:
+the front triangulation inserted points along the curved crown while the roof
+loft spanned that edge with a straight chord. The horizontal bow also collapsed
+to an excessively tight radius at the top, pulling the centre forward.
+
+The body section, cab loft and front now share a sampled perimeter. Their
+boundary uses the same surface offset, and the horizontal bow transitions to
+a finite radius above the destination panel. This closes the slit without
+adding a cover plate. A regression sweeps 301 points over each cab crown and
+checks for solid exterior skin and a continuous height profile; it fails on
+the former export. Native geometry passes the same sweep before export.
+
+The inspector's **TECHO DE CABINA** view at `/model-review.html?view=roof`
+provides a direct view of this joint.
+
+Validation: all 61 tests pass and the production build succeeds. Both exported
+cab crowns were inspected in the browser: [front roof](../blender/qa/web-cab-roof.jpg)
+and [rear roof](../blender/qa/web-rear-cab-roof.jpg). The export matches native
+source SHA-256 `eb69b50058d0a2c655bc544b1d6bf2baa3411047781192db8cb3e4601240b360`.
+
 ## Door operation
 
 The body and portal now have full-height openings. Every leaf is a native empty

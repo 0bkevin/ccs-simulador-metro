@@ -2,7 +2,7 @@
   "schema": "metro-blender-web-export/1",
   "source": {
     "file": "metro_caracas_line1.blend",
-    "sha256": "94f077602c7bafb6c17182412c8e5cfd9b560ef29c8cf0da55436966b5ebe157"
+    "sha256": "eb69b50058d0a2c655bc544b1d6bf2baa3411047781192db8cb3e4601240b360"
   },
   "coordinateSystem": {
     "up": "Y",
@@ -272,7 +272,7 @@
     "train": {
       "path": "models/blender/train.glb",
       "meshes": 10130,
-      "triangles": 1867766,
+      "triangles": 2077372,
       "bounds": {
         "min": [
           -1.55385,
@@ -293,7 +293,7 @@
       "collections": {
         "CAF car 01": {
           "meshes": 757,
-          "triangles": 221535,
+          "triangles": 258618,
           "bounds": {
             "min": [
               -1.55385,
@@ -314,7 +314,7 @@
         },
         "CAF car 02": {
           "meshes": 706,
-          "triangles": 162166,
+          "triangles": 189254,
           "bounds": {
             "min": [
               -1.55385,
@@ -335,7 +335,7 @@
         },
         "CAF car 03": {
           "meshes": 706,
-          "triangles": 162166,
+          "triangles": 189254,
           "bounds": {
             "min": [
               -1.55385,
@@ -356,7 +356,7 @@
         },
         "CAF car 04": {
           "meshes": 706,
-          "triangles": 162166,
+          "triangles": 189254,
           "bounds": {
             "min": [
               -1.55385,
@@ -377,7 +377,7 @@
         },
         "CAF car 05": {
           "meshes": 706,
-          "triangles": 162166,
+          "triangles": 189254,
           "bounds": {
             "min": [
               -1.55385,
@@ -398,7 +398,7 @@
         },
         "CAF car 06": {
           "meshes": 706,
-          "triangles": 162166,
+          "triangles": 189254,
           "bounds": {
             "min": [
               -1.55385,
@@ -419,7 +419,7 @@
         },
         "CAF car 07": {
           "meshes": 757,
-          "triangles": 221535,
+          "triangles": 258618,
           "bounds": {
             "min": [
               -1.55385,
