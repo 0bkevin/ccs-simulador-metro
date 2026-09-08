@@ -5,7 +5,7 @@ import { createTrainInterior } from "./train-interior.js";
 import { createTrainCab } from './train-cab.js';
 import { applyStationCut, createScaleRuler } from './station-inspection.js';
 import { createStationCamera } from './station-camera.js';
-import { createTrainDoors } from './train-doors.js';
+import { createTrainDoors, recordedCafDoorTiming } from './train-doors.js';
 
 /** World adapter for the reviewed Blender export. Coordinates are deliberately
  * untouched: Blender uses Y up and Z along the playable route. */
@@ -38,7 +38,7 @@ export function createWorld(THREE, renderer, stations = [], assets) {
       object.castShadow=materials.some(material=>!material.transparent);
     }
   });
-  const doors = createTrainDoors(train);
+  const doors = createTrainDoors(train, recordedCafDoorTiming);
 
   const cameras = {
     forward: new THREE.PerspectiveCamera(70, 1, 0.05, 1200),

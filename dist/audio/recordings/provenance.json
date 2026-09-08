@@ -1,0 +1,226 @@
+{
+  "sources": {
+    "CAF0q0Humks": {
+      "title": "Recorrido en CAF S6 Overhaul Gris por Línea 1 (Ago 2024) Metro de Caracas",
+      "channel": "Venezuela Transport Info",
+      "upload_date": "20240824",
+      "license": null,
+      "url": "https://www.youtube.com/watch?v=CAF0q0Humks"
+    },
+    "ph1OAT0vqgY": {
+      "title": "Anuncios de las estaciones de linea 1 del Metro de Caracas",
+      "channel": "Venezuela Transport Info",
+      "upload_date": "20211120",
+      "license": null,
+      "url": "https://www.youtube.com/watch?v=ph1OAT0vqgY"
+    }
+  },
+  "processing": "Short excerpts only: trim, fixed gain normalization, 30 ms edge fades, mono MP3 at 128 kbps. No synthesized sound, AI audio generation, voice replacement, denoising, pitch shift or time stretch.",
+  "rights": "Public YouTube recordings; no Creative Commons or redistribution licence is declared by the uploaders in retrieved metadata. Attribution is not a licence grant. These excerpts are included for the user-requested local prototype; broader reuse permission has not been established.",
+  "clips": {
+    "idle": {
+      "file": "idle.mp3",
+      "source": "CAF0q0Humks",
+      "start": 1061,
+      "end": 1065,
+      "gain": 0.35,
+      "description": "Stationary CAF carriage ambience at Altamira; includes the original surroundings.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 1.65943848,
+      "sha256": "d051c43c67bd31701b61ef4ffb238b7d25866e0df8cd9f852974086a689a97d4",
+      "bytes": 65245
+    },
+    "rolling": {
+      "file": "rolling.mp3",
+      "source": "CAF0q0Humks",
+      "start": 1090,
+      "end": 1102,
+      "gain": 0.65,
+      "description": "CAF rolling inside the tunnel after Altamira.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 0.49540677,
+      "sha256": "bc3a6d25a5fe9579e76679ca2750531ffe2231dce8651286a7aed6eead0406c7",
+      "bytes": 193141
+    },
+    "traction": {
+      "file": "traction.mp3",
+      "source": "CAF0q0Humks",
+      "start": 1078,
+      "end": 1087,
+      "gain": 0.45,
+      "description": "CAF departure and acceleration from Altamira.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 1.06079491,
+      "sha256": "7a3ecdefebabdb5c3b828eafd1dda88a354893c88c94441377f5cfd9f1a6204b",
+      "bytes": 145075
+    },
+    "braking": {
+      "file": "braking.mp3",
+      "source": "CAF0q0Humks",
+      "start": 1043,
+      "end": 1053,
+      "gain": 0.4,
+      "description": "CAF slowing into Altamira; original traction/rail sound remains in the recording.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 1.12540143,
+      "sha256": "2f5abab3461b79d21d6838b71318b54ee56a4a7fb6020b92576f953dea3eb91c",
+      "bytes": 160958
+    },
+    "brake-release": {
+      "file": "brake-release.mp3",
+      "source": "CAF0q0Humks",
+      "start": 1053.1,
+      "end": 1054.3,
+      "gain": 0.3,
+      "description": "End-of-stop carriage/air sound; not an isolated pneumatic stem.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 1.6357571,
+      "sha256": "2a93d1f44a5036573241abbaa6bdad9af2c7d66a0458000ff23cd46b7c13cce6",
+      "bytes": 20106
+    },
+    "doors-open": {
+      "file": "doors-open.mp3",
+      "source": "CAF0q0Humks",
+      "start": 1054.4,
+      "end": 1057.1,
+      "gain": 0.65,
+      "description": "Door opening event at Altamira, recorded from the carriage.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 1.66367427,
+      "sha256": "ab70b53602ca929dc0bd391caca5d6126cfda220b88c532c0ab954234e089e54",
+      "bytes": 44347
+    },
+    "doors-close": {
+      "file": "doors-close.mp3",
+      "source": "CAF0q0Humks",
+      "start": 1067.4,
+      "end": 1073.8,
+      "gain": 0.8,
+      "description": "Original sustained CAF warning tone followed by closure sounds at Altamira.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 1.2982669,
+      "sha256": "e1fda452623408a246290a99231f14d310c3c454d05dc75d324e26e4688d53d9",
+      "bytes": 103279
+    },
+    "arrival-cano-amarillo": {
+      "file": "arrival-cano-amarillo.mp3",
+      "source": "ph1OAT0vqgY",
+      "start": 58.3,
+      "end": 62.8,
+      "gain": 0.95,
+      "description": "Station Caño Amarillo announcement.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 0.51189179,
+      "sha256": "f625fa6fc76aa436afde00e076aa91dd91ca5522679c03c32afd74327470a788",
+      "bytes": 73186
+    },
+    "arrival-capitolio": {
+      "file": "arrival-capitolio.mp3",
+      "source": "ph1OAT0vqgY",
+      "start": 65.35,
+      "end": 72.7,
+      "gain": 0.95,
+      "description": "Station Capitolio announcement including transfer information.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 0.52070402,
+      "sha256": "43dfba27bcbcc34b2ff7172f95c027b19881fc06dcf8aae89d3a8e8835f80353",
+      "bytes": 118744
+    },
+    "arrival-bellas-artes": {
+      "file": "arrival-bellas-artes.mp3",
+      "source": "ph1OAT0vqgY",
+      "start": 91.9,
+      "end": 96.8,
+      "gain": 0.95,
+      "description": "Station Bellas Artes announcement.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 1.10209103,
+      "sha256": "c987bb6a29772cde8c6d0307f2213399610f3d33bfade8cc9d626ec6f94c90ca",
+      "bytes": 79456
+    },
+    "arrival-plaza-venezuela": {
+      "file": "arrival-plaza-venezuela.mp3",
+      "source": "ph1OAT0vqgY",
+      "start": 105.8,
+      "end": 114.75,
+      "gain": 0.95,
+      "description": "Station Plaza Venezuela announcement including the recorded transfer information.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 0.89594159,
+      "sha256": "a06483dd43641ff822e3de1fa8c67aa87ac500eff863ce8eff142d51f1f08336",
+      "bytes": 144239
+    },
+    "arrival-altamira": {
+      "file": "arrival-altamira.mp3",
+      "source": "ph1OAT0vqgY",
+      "start": 136.75,
+      "end": 141.5,
+      "gain": 0.95,
+      "description": "Station Altamira announcement.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 1.04699163,
+      "sha256": "c13be55dc320b1d9d8d62765e750c78bc720f5abce9b77ae9c2c2fdc528dd166",
+      "bytes": 76948
+    },
+    "ambience-cano-amarillo": {
+      "file": "ambience-cano-amarillo.mp3",
+      "source": "CAF0q0Humks",
+      "start": 2529,
+      "end": 2537,
+      "gain": 0.6,
+      "description": "Caño Amarillo during the station dwell, captured from the train.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 0.87100085,
+      "sha256": "3037b1a7c92d25af9499533d3aae6035a0752bcb158f7cca90e03692f84a57e6",
+      "bytes": 129193
+    },
+    "ambience-capitolio": {
+      "file": "ambience-capitolio.mp3",
+      "source": "CAF0q0Humks",
+      "start": 2397,
+      "end": 2404,
+      "gain": 0.6,
+      "description": "Capitolio during the station dwell, captured from the train.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 1.39503993,
+      "sha256": "ef71578b72bc842df004f99b3b92e624aa4cb240dee87dee42bad3199692ce5a",
+      "bytes": 112893
+    },
+    "ambience-bellas-artes": {
+      "file": "ambience-bellas-artes.mp3",
+      "source": "CAF0q0Humks",
+      "start": 2029,
+      "end": 2037,
+      "gain": 0.6,
+      "description": "Bellas Artes during the station dwell, captured from the train.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 1.25689017,
+      "sha256": "62f5398f8ccc2bb540931c6f7bfc65dc457cf07a8ca3b4d26326a8894c6da456",
+      "bytes": 129193
+    },
+    "ambience-plaza-venezuela": {
+      "file": "ambience-plaza-venezuela.mp3",
+      "source": "CAF0q0Humks",
+      "start": 1605,
+      "end": 1613,
+      "gain": 0.6,
+      "description": "Plaza Venezuela during the station dwell, captured from the train.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 1.40025529,
+      "sha256": "9d96e4c09db9f0aba5a5ddd14aa101ac991fbb64eb555f392169d8a56ee12980",
+      "bytes": 129193
+    },
+    "ambience-altamira": {
+      "file": "ambience-altamira.mp3",
+      "source": "CAF0q0Humks",
+      "start": 1058,
+      "end": 1065,
+      "gain": 0.6,
+      "description": "Altamira during the station dwell, captured from the train.",
+      "authenticity": "verified-recording",
+      "normalizationGain": 1.64218033,
+      "sha256": "8502f4d6c7c4320081e84cf9ea02c9b411d31516339e95de525fe2d2fb72e692",
+      "bytes": 112893
+    }
+  }
+}

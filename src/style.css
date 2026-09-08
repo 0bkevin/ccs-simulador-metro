@@ -787,3 +787,9 @@ button {
   .station-review-ui .review-kicker { margin-top: 14px; }
   .station-review-ui p { font-size: 13px; margin-bottom: 12px; }
 }
+
+.audio-recording { display: grid; gap: .45rem; margin: 1rem 0; padding: .8rem 0; border-bottom: 1px solid #ffffff20; }
+.audio-recording audio { width: min(100%, 420px); }
+.audio-recording a { font-size: .8rem; }
+#audioSources details { margin-top: 1rem; }
+#audioSources summary { cursor: pointer; font-size: .8rem; letter-spacing: .04em; }

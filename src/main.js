@@ -12,6 +12,7 @@ import { configureBlenderRenderer } from "./blender-presentation.js";
 import { stationViews, getTunnelTravelRange } from "./station-views.js";
 import { createSimulation } from "./simulation.js";
 import { createMetroAudio, actualRecordings, audioDescription } from "./audio.js";
+import { recordingManifest } from "./audio-recordings.js";
 import "./style.css";
 
 async function boot() {
@@ -46,10 +47,11 @@ app.append(renderer.domElement);
 const world = createWorld(THREE, renderer, data, blenderAssets);
 world.resize(innerWidth, innerHeight);
 const sim = createSimulation(data, { routeEnd: getTunnelTravelRange(data.length - 1).max - 5 });
-const metroAudio = createMetroAudio();
+const metroAudio = createMetroAudio({ stops: data, onStatus: syncAudioButton });
 window.__metro = {
   world,
   sim,
+  audio: metroAudio,
   renderer,
   assetSource: blenderAssets.source,
   manifest: blenderAssets.manifest,
@@ -69,7 +71,7 @@ ui.innerHTML = `
 <div class="toast" id="toast"></div>
 <div class="overlay" id="intro"><div class="card"><div class="corner">SIMULADOR 01 / CABINA</div><div class="eyebrow">Servicio de pasajeros · turno mañana</div><h1>Línea 1<br>en marcha.</h1><p>Conduce el tren desde Caño Amarillo hasta Altamira. Detente dentro de la zona de parada, abre puertas durante tres segundos y continúa.</p><button class="start" id="start">Abrir cabina</button><button class="secondary" id="inspectIntro">INSPECCIONAR TREN</button><button class="secondary" id="inspectStationsIntro">INSPECCIONAR ESTACIONES</button><p class="fine">Cinco estaciones, andenes de 150 m y túneles para conducir. Recorrido abreviado de 2,16 km. La línea histórica completa tiene ${lineInfo.realStationCount} estaciones.</p></div></div>
 <div class="overlay" id="complete" style="display:none"><div class="card"><div class="eyebrow">Servicio finalizado</div><h1>Altamira</h1><p>Has servido las ${data.length} estaciones de este recorrido.</p><p class="scoreline">Puntuación <strong id="finalScore">100</strong></p><button class="start" id="restart">REINICIAR SERVICIO</button><button class="secondary" id="completeSources">VER FUENTES</button></div></div>
-<div class="overlay" id="sourceModal" style="display:none"><div class="card source-card"><button class="corner" id="closeSources">CERRAR ×</button><div class="eyebrow">Documentación</div><h1>Fuentes</h1><p>Investigación sobre diseño, estaciones, trenes y mecánica de la Línea 1. Fuentes primarias consultadas:</p><div class="source-links"><a href="https://openjicareport.jica.go.jp/pdf/11789237_03.pdf" target="_blank" rel="noreferrer">JICA · datos de línea</a><a href="https://www.aschinfraestructuras.com/linea-caracas" target="_blank" rel="noreferrer">ASCH · rehabilitación de vía</a><a href="https://admin.cafmobility.com/uploads/281_CAF_Catalogo_General_ES_601604d06c.pdf" target="_blank" rel="noreferrer">CAF · catálogo</a><a href="https://www.revistaitransporte.es/wp-content/uploads/2016/02/2013_49.pdf" target="_blank" rel="noreferrer">INECO · tren CAF y rehabilitación</a><a href="https://www.alstom.com/fr/press-releases-news/2005/9/ALSTOM-remporte-un-contrat-cle-en-main-pour-le-Metro-de-Caracas-au-Venezuela-20050916" target="_blank" rel="noreferrer">Alstom · Metro de Caracas</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery1.htm" target="_blank" rel="noreferrer">UrbanRail · Altamira y Bellas Artes</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery2.htm" target="_blank" rel="noreferrer">UrbanRail · Capitolio</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery4.htm" target="_blank" rel="noreferrer">UrbanRail · Plaza Venezuela</a><a href="https://fundaayc.com/2024/07/14/algo-mas-sobre-la-postal-no-411/" target="_blank" rel="noreferrer">Fundación Arquitectura y Ciudad · Altamira</a><a href="https://recyt.fecyt.es/index.php/CyTET/article/download/83795/61863/276024" target="_blank" rel="noreferrer">Bemergui · arquitectura de estaciones</a></div><p><small>La grabación real es una referencia externa. El audio del juego es procedural; no se redistribuye la grabación.</small></p><button class="secondary" id="realListen">ESCUCHAR REFERENCIA REAL CAF/ALSTOM</button><iframe id="realFrame" title="Referencia real del Metro de Caracas" style="display:none;width:100%;aspect-ratio:16/9;border:0;margin-top:1rem" allow="autoplay; encrypted-media" allowfullscreen></iframe><div id="audioSources"></div><pre id="researchText"></pre><pre id="stationResearchText"></pre></div></div>`;
+<div class="overlay" id="sourceModal" style="display:none"><div class="card source-card"><button class="corner" id="closeSources">CERRAR ×</button><div class="eyebrow">Documentación</div><h1>Fuentes</h1><p>Investigación sobre diseño, estaciones, trenes y mecánica de la Línea 1. Fuentes primarias consultadas:</p><div class="source-links"><a href="https://openjicareport.jica.go.jp/pdf/11789237_03.pdf" target="_blank" rel="noreferrer">JICA · datos de línea</a><a href="https://www.aschinfraestructuras.com/linea-caracas" target="_blank" rel="noreferrer">ASCH · rehabilitación de vía</a><a href="https://admin.cafmobility.com/uploads/281_CAF_Catalogo_General_ES_601604d06c.pdf" target="_blank" rel="noreferrer">CAF · catálogo</a><a href="https://www.revistaitransporte.es/wp-content/uploads/2016/02/2013_49.pdf" target="_blank" rel="noreferrer">INECO · tren CAF y rehabilitación</a><a href="https://www.alstom.com/fr/press-releases-news/2005/9/ALSTOM-remporte-un-contrat-cle-en-main-pour-le-Metro-de-Caracas-au-Venezuela-20050916" target="_blank" rel="noreferrer">Alstom · Metro de Caracas</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery1.htm" target="_blank" rel="noreferrer">UrbanRail · Altamira y Bellas Artes</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery2.htm" target="_blank" rel="noreferrer">UrbanRail · Capitolio</a><a href="https://www.urbanrail.net/am/cara/pix/caracas-gallery4.htm" target="_blank" rel="noreferrer">UrbanRail · Plaza Venezuela</a><a href="https://fundaayc.com/2024/07/14/algo-mas-sobre-la-postal-no-411/" target="_blank" rel="noreferrer">Fundación Arquitectura y Ciudad · Altamira</a><a href="https://recyt.fecyt.es/index.php/CyTET/article/download/83795/61863/276024" target="_blank" rel="noreferrer">Bemergui · arquitectura de estaciones</a></div><p><small>El audio utiliza fragmentos atribuidos a videos del Metro de Caracas. Consulta aquí cada grabación y su fuente.</small></p><button class="secondary" id="realListen">VER GRABACIÓN CAF/ALSTOM</button><iframe id="realFrame" title="Referencia real del Metro de Caracas" style="display:none;width:100%;aspect-ratio:16/9;border:0;margin-top:1rem" allow="autoplay; encrypted-media" allowfullscreen></iframe><div id="audioSources"></div><pre id="researchText"></pre><pre id="stationResearchText"></pre></div></div>`;
 app.append(ui);
 const stationPanel = document.createElement("section");
 stationPanel.className = "station-review-ui in-game-stations";
@@ -107,7 +109,32 @@ actualRecordings.forEach((recording) => {
   link.style.display = "block";
   $("audioSources").append(link);
 });
+const audioReview = document.createElement("details");
+const audioSummary = document.createElement("summary");
+audioSummary.textContent = "ESCUCHAR LOS 17 FRAGMENTOS DEL JUEGO";
+audioReview.append(audioSummary);
+const audioLabels = {
+  idle: "Tren detenido", rolling: "Rodadura en túnel", traction: "Salida del CAF", braking: "Frenado del CAF",
+  "brake-release": "Final de la parada", "doors-open": "Apertura de puertas", "doors-close": "Aviso y cierre de puertas",
+};
+for (const [id, clip] of Object.entries(recordingManifest.clips)) {
+  const station = data.find(stop => id.endsWith(stop.id));
+  const label = audioLabels[id] || `${id.startsWith("arrival-") ? "Anuncio" : "Ambiente"} · ${station?.name || id}`;
+  const row = document.createElement("div"); row.className = "audio-recording";
+  const title = document.createElement("div"); title.textContent = label;
+  const player = document.createElement("audio"); player.controls = true; player.preload = "none";
+  player.src = clip.url; player.setAttribute("aria-label", label);
+  player.addEventListener("play", () => {
+    audioReview.querySelectorAll("audio").forEach(other => { if (other !== player) other.pause(); });
+    $("realFrame").src = ""; $("realFrame").style.display = "none";
+  });
+  const source = document.createElement("a"); source.href = `https://www.youtube.com/watch?v=${clip.source}&t=${Math.floor(clip.start)}s`;
+  source.target = "_blank"; source.rel = "noopener noreferrer"; source.textContent = "Ver fragmento original ↗";
+  row.append(title, player, source); audioReview.append(row);
+}
+$("audioSources").append(audioReview);
 $("realListen").onclick = () => {
+  audioReview.querySelectorAll("audio").forEach(player => player.pause());
   $("realFrame").src = "https://www.youtube-nocookie.com/embed/Ej0X90zrtNg";
   $("realFrame").style.display = "block";
 };
@@ -120,6 +147,23 @@ const cameraModes = ["platform", "exterior", "forward", "interior"];
 const cameraLabels = { platform: "ANDÉN", exterior: "EXTERIOR", forward: "MARCHA", interior: "INTERIOR" };
 $("camera").textContent = "VISTA: ANDÉN";
 let soundOn = false;
+let soundRequest = 0;
+function syncAudioButton(status) {
+  soundOn = status.enabled;
+  $("sound").textContent = !soundOn ? "SONIDO" : status.loading ? "CARGANDO AUDIO…" : "SONIDO ON";
+  $("sound").setAttribute("aria-pressed", String(soundOn));
+}
+function updateAudio(dt = 0, state = sim.state) {
+  metroAudio.update(dt, { ...state, hidden: document.hidden, doorFraction: world.doorFraction,
+    doorAudio: world.doors.audio, throttle: throttle && world.doorFraction < 0.001,
+    brake, emergency, cameraMode: cameraModes[cameraMode] });
+}
+function togglePause() {
+  sim.pause();
+  last = performance.now();
+  updateAudio();
+  toast(sim.state.paused ? "Pausa" : "Continuar");
+}
 let sourcePaused = false;
 let sourceOpen = false;
 let lastComplete = false;
@@ -134,6 +178,7 @@ function inspectStation(index = world.activeStation, kind = "platform") {
     inspectionPaused = sim.state.paused;
     setInputState(false); emergency = false;
     sim.pause(true);
+    updateAudio();
   }
   const view = world.inspectStation(index, kind);
   const station = stationViews[view.index];
@@ -160,6 +205,8 @@ function leaveStation() {
   ui.classList.remove("station-inspecting");
   interiorPanel.hidden = cameraModes[cameraMode] !== "interior";
   sim.pause(inspectionPaused);
+  last = performance.now();
+  updateAudio();
 }
 stationSelect.onchange = () => inspectStation(Number(stationSelect.value));
 stationPanel.querySelectorAll("[data-station-view]").forEach(button => {
@@ -228,6 +275,9 @@ function toggleDoors() {
   if (sourceOpen || world.inspection) return;
   const old = sim.state;
   const next = sim.toggleDoors();
+  if (old.doorsOpen !== next.doorsOpen) last = performance.now();
+  world.doors.update(0, next);
+  updateAudio(0, next);
   if (old.doorsOpen !== next.doorsOpen)
     toast(next.doorsOpen ? "Abriendo puertas del andén" : "Cerrando puertas");
   else if (old.paused) toast("Continúa el servicio para accionar las puertas");
@@ -242,7 +292,7 @@ function openSources() {
   emergency = false;
   sourcePaused = sim.state.paused;
   sim.pause(true);
-  metroAudio.update(0, { ...sim.state, paused: true, doorsOpen: true });
+  updateAudio();
   sourceOpen = true;
   $("sourceModal").style.display = "grid";
 }
@@ -251,10 +301,12 @@ function closeSources() {
   if (!sourceOpen) return;
   sourceOpen = false;
   $("sourceModal").style.display = "none";
+  audioReview.querySelectorAll("audio").forEach(player => { player.pause(); player.currentTime = 0; });
   $("realFrame").src = "";
   $("realFrame").style.display = "none";
   sim.pause(sourcePaused);
-  metroAudio.reset();
+  last = performance.now();
+  updateAudio();
 }
 
 function resetService() {
@@ -262,7 +314,11 @@ function resetService() {
   setInputState(false);
   emergency = false;
   selectCamera(0);
+  metroAudio.reset();
   const state = sim.reset();
+  world.doors.reset(sim.state);
+  last = performance.now();
+  updateAudio();
   $("intro").style.display = "none";
   $("complete").style.display = "none";
   lastComplete = false;
@@ -306,8 +362,7 @@ function command(event) {
     selectCamera((cameraMode + 1) % cameraModes.length);
   }
   if (event.code === "KeyP") {
-    sim.pause();
-    toast(sim.state.paused ? "Pausa" : "Continuar");
+    togglePause();
   }
   if (event.code === "KeyR") resetService();
 }
@@ -323,25 +378,30 @@ addEventListener("blur", () => {
   setInputState(false);
   emergency = false;
   sim.pause(true);
+  updateAudio();
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     setInputState(false);
     emergency = false;
     sim.pause(true);
+    updateAudio();
+    audioReview.querySelectorAll("audio").forEach(player => player.pause());
+    $("realFrame").src = "";
+    $("realFrame").style.display = "none";
   }
 });
+addEventListener("pagehide", () => metroAudio.update(0, { ...sim.state, hidden: true }));
 
 $("start").onclick = () => {
   sim.start();
+  last = performance.now();
+  updateAudio();
   $("intro").style.display = "none";
   toast("Caño Amarillo · servicio listo");
 };
 $("doors").onclick = toggleDoors;
-$("pause").onclick = () => {
-  sim.pause();
-  toast(sim.state.paused ? "Pausa" : "Continuar");
-};
+$("pause").onclick = togglePause;
 $("recover").onclick = () => {
   sim.recover();
   toast("Tren recuperado · penalización aplicada");
@@ -362,10 +422,22 @@ $("inspectStations").onclick = () => {
 $("inspectStationsIntro").onclick = () => {
   inspectStation();
 };
-$("sound").onclick = () => {
-  soundOn = !soundOn;
-  metroAudio.setEnabled(soundOn);
-  $("sound").textContent = soundOn ? "SONIDO ON" : "SONIDO";
+$("sound").setAttribute("aria-pressed", "false");
+$("sound").onclick = async () => {
+  const request = ++soundRequest;
+  const requested = !soundOn;
+  soundOn = requested;
+  $("sound").textContent = requested ? "CARGANDO AUDIO…" : "SONIDO";
+  $("sound").setAttribute("aria-pressed", String(requested));
+  await metroAudio.setEnabled(requested);
+  if (request !== soundRequest) return;
+  const status = metroAudio.status();
+  syncAudioButton(status);
+  if (requested && !status.loading && !soundOn) {
+    toast(status.error || (status.total ? "No se pudo cargar el audio. Pulsa SONIDO para reintentar." : "Grabaciones originales pendientes · consulta FUENTES"));
+  } else if (soundOn && status.failed.length) {
+    toast("Algunas grabaciones no se pudieron cargar. Vuelve a activar SONIDO para reintentar.");
+  }
 };
 $("volume").oninput = (event) => metroAudio.setVolume(event.target.value);
 $("sources").onclick = openSources;
@@ -419,11 +491,12 @@ function update(now) {
     requestAnimationFrame(update);
     return;
   }
-  const dt = Math.min((now - last) / 1000, 0.05);
+  const elapsed = Math.max(0, (now - last) / 1000);
+  const dt = Math.min(elapsed, 0.05);
   last = now;
   const state = sim.tick(dt, { throttle: throttle && world.doorFraction < 0.001, brake, emergency });
   if (state.speed <= 0.01) emergency = false;
-  world.update(state.paused ? 0 : dt, state.position, {
+  world.update(state.paused ? 0 : elapsed, state.position, {
     doorsOpen: state.doorsOpen,
     doorSide: state.doorSide,
     speed: state.speed,
@@ -431,8 +504,7 @@ function update(now) {
     brake,
     emergency,
   });
-  const doorClosed = world.doorFraction < 0.001;
-  metroAudio.update(dt, { ...state, throttle: throttle && doorClosed, brake, emergency, cameraMode: cameraModes[cameraMode] });
+  updateAudio(dt, state);
   const target = data[state.target];
   const kmh = Math.round(state.speed * 3.6);
   $("speed").textContent = String(kmh).padStart(2, "0");
@@ -450,7 +522,7 @@ function update(now) {
       : state.doorsOpen
         ? `EMBARQUE · ${Math.ceil(state.dwell)} s`
         : `${Math.max(0, Math.round((target?.distance || 0) - state.position))} m · ${state.score} PTS`;
-  $("doors").textContent = world.doors.moving
+  $("doors").textContent = world.doors.warning ? "AVISO DE CIERRE…" : world.doors.moving
     ? (state.doorsOpen ? "ABRIENDO PUERTAS…" : "CERRANDO PUERTAS…")
     : (state.doorsOpen ? "CERRAR PUERTAS · E" : "ABRIR PUERTAS · E");
   $("pause").textContent = state.paused ? "CONTINUAR" : "PAUSA";

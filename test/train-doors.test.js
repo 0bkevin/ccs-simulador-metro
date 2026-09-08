@@ -212,3 +212,23 @@ test('cab paint matches the body at the joint and the window stays inside the ac
     }
   }
 });
+
+test('recorded CAF closing warning holds doors open and traction locked before leaf travel', () => {
+  const train = new THREE.Group();
+  const doors = createTrainDoors(train, { openingSeconds: 2.7, closingSeconds: 3.2, closeWarningSeconds: 3.2 });
+  doors.update(0, { doorsOpen: true });
+  advance(doors, { doorsOpen: false }, 3);
+  assert.equal(doors.fraction, 1, 'warning plays while the doors remain fully open');
+  assert.equal(doors.warning, true);
+  advance(doors, { doorsOpen: false }, 1);
+  assert.ok(doors.fraction > 0 && doors.fraction < 1, 'doors move only after the warning');
+  advance(doors, { doorsOpen: false }, 3);
+  assert.equal(doors.fraction, 0);
+  assert.equal(doors.warning, false);
+  advance(doors, { doorsOpen: true }, 3);
+  doors.update(.1, { doorsOpen: false });
+  assert.equal(doors.warning, true);
+  doors.update(.1, { doorsOpen: true });
+  assert.equal(doors.warning, false, 'reopening cancels the pending close');
+  assert.equal(doors.fraction, 1);
+});

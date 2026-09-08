@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Metro · Verificación de grabaciones</title>
+<style>body{font:16px system-ui;background:#111;color:#eee;padding:2rem;max-width:900px;margin:auto}button,a{color:inherit}button{padding:.7rem;background:#333;border:1px solid #666;border-radius:5px;cursor:pointer}pre{white-space:pre-wrap}a{display:block;margin-bottom:1rem}</style>
+<a href="./">← Volver al Metro</a>
+<h1>Grabaciones del Metro de Caracas</h1>
+<p>Comprueba la decodificación, el volumen y el silencio al pausar. Los sonidos proceden de los mismos archivos que utiliza el juego.</p>
+<button id="run">Verificar grabaciones</button> <button id="listen">Escuchar rodadura</button> <button id="stop">Detener</button>
+<pre id="out" role="status">Sin verificar.</pre>
+<script type="module">
+import { createMetroAudio } from './src/audio.js';
+import { recordingManifest } from './src/audio-recordings.js';
+const out = document.querySelector('#out');
+const stops = Object.keys(recordingManifest.stations).map((id, i) => ({ id, distance: i * 510 }));
+const base = { started: true, speed: 0, position: 200, doorsOpen: false };
+const cases = {
+  idle: { ...base, position: 0, doorsOpen: true }, motion: { ...base, speed: 10, throttle: true },
+  coast: { ...base, speed: 10 }, braking: { ...base, speed: 8, brake: true },
+  emergency: { ...base, speed: 8, emergency: true },
+  paused: { ...base, speed: 8, paused: true }, hidden: { ...base, speed: 8, hidden: true },
+};
+async function renderPause(complete = false) {
+  const ctx = new OfflineAudioContext(2, 44100 * 12, 44100);
+  const starts = [], checkpoints = [];
+  const createSource = ctx.createBufferSource.bind(ctx);
+  ctx.createBufferSource = () => {
+    const source = createSource(), start = source.start.bind(source);
+    source.start = (when, offset = 0) => { starts.push({ loop: source.loop, offset }); start(when, offset); };
+    return source;
+  };
+  const engine = createMetroAudio({ stops, contextFactory: () => ctx });
+  await engine.setEnabled(true); engine.setVolume(100);
+  const arrival = { ...base, position: stops.at(-1).distance, doorsOpen: true };
+  const closing = { ...arrival, doorsOpen: false, complete };
+  engine.update(0, arrival); engine.update(0, closing);
+  const changes = [
+    ctx.suspend(1).then(() => { engine.update(0, { ...closing, paused: true }); checkpoints.push(engine.status().playing); return ctx.resume(); }),
+    ctx.suspend(2).then(() => { engine.update(0, closing); return ctx.resume(); }),
+  ];
+  const buffer = await ctx.startRendering(); await Promise.all(changes);
+  const samples = buffer.getChannelData(0);
+  const peak = (from, to) => samples.subarray(Math.ceil(from * 44100), Math.floor(to * 44100)).reduce((max, n) => Math.max(max, Math.abs(n)), 0);
+  engine.dispose();
+  return { stoppedDuringPause: checkpoints.every(slots => slots.length === 0),
+    silentDuringPause: peak(1.1, 1.9) === 0, audibleAfterResume: peak(2.2, 3) > 0.001,
+    resumedOffsets: starts.filter(s => !s.loop && s.offset > 0).map(s => s.offset) };
+}
+async function render(state, transition) {
+  const ctx = new OfflineAudioContext(2, 44100 * 10, 44100);
+  const engine = createMetroAudio({ stops, contextFactory: () => ctx });
+  await engine.setEnabled(true); engine.setVolume(100); engine.update(0, state);
+  if (transition) engine.update(0, transition);
+  const status = engine.status();
+  const buffer = await ctx.startRendering();
+  let sum = 0, peak = 0, finite = true;
+  for (let c = 0; c < buffer.numberOfChannels; c++) for (const value of buffer.getChannelData(c)) {
+    finite &&= Number.isFinite(value); sum += value * value; peak = Math.max(peak, Math.abs(value));
+  }
+  engine.dispose();
+  return { rms: Math.sqrt(sum / (buffer.length * buffer.numberOfChannels)), peak, finite, loaded: status.loaded, failed: status.failed };
+}
+window.runAudioChecks = async () => {
+  const result = {};
+  for (const [name, state] of Object.entries(cases)) result[name] = await render(state);
+  result.doorOpen = await render(base, { ...base, doorsOpen: true });
+  result.doorClose = await render({ ...base, doorsOpen: true }, base);
+  for (const station of stops) result[station.id] = await render({ ...base, position: station.distance, doorsOpen: true });
+  result.arrivalWithDoorClose = await render({ ...base, position: 510, doorsOpen: true }, { ...base, position: 510, doorsOpen: false });
+  result.finalCompletion = await render({ ...base, position: stops.at(-1).distance, doorsOpen: true }, { ...base, position: stops.at(-1).distance, doorsOpen: false, complete: true });
+  const all = Object.entries(result);
+  result.checks = {
+    decoded: all.every(([, r]) => r.loaded === Object.keys(recordingManifest.clips).length && !r.failed.length),
+    finite: all.every(([, r]) => r.finite),
+    audible: all.filter(([name]) => !['paused', 'hidden'].includes(name)).every(([, r]) => r.rms > 0.0001),
+    silentWhenPaused: result.paused.peak === 0 && result.hidden.peak === 0,
+    headroom: all.every(([, r]) => r.peak < 0.95),
+  };
+  result.pauseResume = await renderPause();
+  result.finalPauseResume = await renderPause(true);
+  result.checks.resume = [result.pauseResume, result.finalPauseResume].every(r =>
+    r.stoppedDuringPause && r.silentDuringPause && r.audibleAfterResume &&
+    r.resumedOffsets.length === 2 && r.resumedOffsets.every(offset => Math.abs(offset - 1) < 0.01));
+  out.textContent = JSON.stringify(result, null, 2); window.audioCheckResult = result;
+  return result;
+};
+document.querySelector('#run').onclick = () => { out.textContent = 'Verificando…'; window.runAudioChecks().catch(error => { out.textContent = error.message; }); };
+let live;
+document.querySelector('#listen').onclick = async () => {
+  live?.dispose(); const engine = createMetroAudio(); live = engine;
+  if (await engine.setEnabled(true)) { engine.update(0, cases.motion); out.textContent = 'Rodadura original del CAF durante seis segundos.'; }
+  setTimeout(() => engine.dispose(), 6000);
+};
+document.querySelector('#stop').onclick = () => { live?.dispose(); out.textContent = 'Audio detenido.'; };
+addEventListener('pagehide', () => live?.dispose());
+document.addEventListener('visibilitychange', () => { if (document.hidden) live?.dispose(); });
+</script>
+</html>
