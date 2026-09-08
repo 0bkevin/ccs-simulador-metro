@@ -1,0 +1,44 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Metro audio QA</title>
+<style>body{font:16px system-ui;background:#111;color:#eee;padding:2rem}button{padding:.7rem}pre{white-space:pre-wrap}</style>
+<h1>Metro audio QA</h1>
+<p>Offline render sanity check for idle, motion, doors, braking, and pause.</p>
+<button id="run">Render cases</button> <button id="listen">Listen to motion</button>
+<pre id="out">Not run.</pre>
+<script type="module">
+import { createMetroAudio } from "/src/audio.js";
+const out = document.querySelector("#out");
+const cases = {
+  idle: { started: true, speed: 0, doorsOpen: true },
+  motion: { started: true, speed: 10, doorsOpen: false, throttle: true },
+  coast: { started: true, speed: 10, doorsOpen: false, throttle: false, brake: false },
+  braking: { started: true, speed: 8, doorsOpen: false, brake: true },
+  paused: { started: true, speed: 8, doorsOpen: false, paused: true },
+};
+async function render(state, transition = null) {
+  const ctx = new OfflineAudioContext(2, 44100 * 2, 44100);
+  const engine = createMetroAudio({ contextFactory: () => ctx, now: () => 0 });
+  await engine.setEnabled(true);
+  engine.update(0.016, state);
+  engine.update(0.5, state);
+  if (transition) engine.update(0, transition);
+  const buffer = await ctx.startRendering();
+  let sum = 0, peak = 0, n = 0;
+  for (let c = 0; c < buffer.numberOfChannels; c++) for (const sample of buffer.getChannelData(c)) { sum += sample * sample; peak = Math.max(peak, Math.abs(sample)); n++; }
+  return { rms: Math.sqrt(sum / n), peak };
+}
+document.querySelector("#run").onclick = async () => {
+  const result = {};
+  for (const [name, state] of Object.entries(cases)) result[name] = await render(state);
+  result.doorClose = await render(cases.idle, { started: true, speed: 0, doorsOpen: false });
+  result.checks = {
+    finite: Object.values(result).filter(v => v && v.rms).every(v => Number.isFinite(v.rms) && Number.isFinite(v.peak)),
+    motionAudible: result.motion.rms > 1e-4,
+    coastAudible: result.coast.rms > 1e-4,
+    limited: Object.values(result).filter(v => v && v.peak).every(v => v.peak < 0.5),
+  };
+  out.textContent = JSON.stringify(result, null, 2);
+};
+document.querySelector("#listen").onclick = async () => { const e = createMetroAudio(); await e.setEnabled(true); e.update(0.016, cases.motion); out.textContent = "Motion layer playing for 2 seconds."; setTimeout(() => e.dispose(), 2000); };
+</script>

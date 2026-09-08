@@ -1,0 +1,9 @@
+{
+  "name": "metro-caracas-linea-1",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {"dev": "vite", "build": "vite build", "preview": "vite preview", "test": "node --test", "export:blender": "blender -b blender/metro_caracas_line1.blend --python blender/export_web.py -- --output public/models/blender"},
+  "dependencies": {"three": "^0.169.0"},
+  "devDependencies": {"vite": "^6.0.0"}
+}

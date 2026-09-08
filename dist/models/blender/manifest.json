@@ -1,0 +1,1464 @@
+{
+  "schema": "metro-blender-web-export/1",
+  "source": {
+    "file": "metro_caracas_line1.blend",
+    "sha256": "bba02f1e4074e1358afdc5f55d4cae699eb88f3fa638c610bcb790ad6b74d7ba"
+  },
+  "coordinateSystem": {
+    "up": "Y",
+    "routeAxis": "Z",
+    "exportYup": false
+  },
+  "train": {
+    "carCount": 7,
+    "collections": [
+      "CAF car 01",
+      "CAF car 02",
+      "CAF car 03",
+      "CAF car 04",
+      "CAF car 05",
+      "CAF car 06",
+      "CAF car 07"
+    ],
+    "interior": {
+      "collections": [
+        "CAF interior 01",
+        "CAF interior 02",
+        "CAF interior 03",
+        "CAF interior 04",
+        "CAF interior 05",
+        "CAF interior 06",
+        "CAF interior 07"
+      ],
+      "cars": [
+        {
+          "index": 1,
+          "center": -7.73,
+          "direction": 1,
+          "floorY": 1.07,
+          "eyeY": 2.57
+        },
+        {
+          "index": 2,
+          "center": -28.69,
+          "direction": 1,
+          "floorY": 1.07,
+          "eyeY": 2.57
+        },
+        {
+          "index": 3,
+          "center": -49.650000000000006,
+          "direction": 1,
+          "floorY": 1.07,
+          "eyeY": 2.57
+        },
+        {
+          "index": 4,
+          "center": -70.61,
+          "direction": 1,
+          "floorY": 1.07,
+          "eyeY": 2.57
+        },
+        {
+          "index": 5,
+          "center": -91.57000000000001,
+          "direction": 1,
+          "floorY": 1.07,
+          "eyeY": 2.57
+        },
+        {
+          "index": 6,
+          "center": -112.53000000000002,
+          "direction": 1,
+          "floorY": 1.07,
+          "eyeY": 2.57
+        },
+        {
+          "index": 7,
+          "center": -133.49,
+          "direction": -1,
+          "floorY": 1.07,
+          "eyeY": 2.57
+        }
+      ]
+    }
+  },
+  "stations": [
+    {
+      "id": "cano-amarillo",
+      "name": "Caño Amarillo",
+      "distance": 0,
+      "collection": "Station Caño Amarillo"
+    },
+    {
+      "id": "capitolio",
+      "name": "Capitolio",
+      "distance": 160,
+      "collection": "Station Capitolio"
+    },
+    {
+      "id": "bellas-artes",
+      "name": "Bellas Artes",
+      "distance": 320,
+      "collection": "Station Bellas Artes"
+    },
+    {
+      "id": "plaza-venezuela",
+      "name": "Plaza Venezuela",
+      "distance": 480,
+      "collection": "Station Plaza Venezuela"
+    },
+    {
+      "id": "altamira",
+      "name": "Altamira",
+      "distance": 640,
+      "collection": "Station Altamira"
+    }
+  ],
+  "assets": {
+    "train": {
+      "path": "models/blender/train.glb",
+      "meshes": 9714,
+      "triangles": 1795012,
+      "bounds": {
+        "min": [
+          -1.55385,
+          0.115,
+          -144.63434
+        ],
+        "max": [
+          1.55385,
+          3.924,
+          3.41433
+        ],
+        "size": [
+          3.1077,
+          3.809,
+          148.04867
+        ]
+      },
+      "collections": {
+        "CAF car 01": {
+          "meshes": 677,
+          "triangles": 182622,
+          "bounds": {
+            "min": [
+              -1.55385,
+              0.115,
+              -18.209
+            ],
+            "max": [
+              1.55385,
+              3.924,
+              3.41433
+            ],
+            "size": [
+              3.1077,
+              3.809,
+              21.62333
+            ]
+          }
+        },
+        "CAF car 02": {
+          "meshes": 666,
+          "triangles": 163382,
+          "bounds": {
+            "min": [
+              -1.55385,
+              0.115,
+              -39.169
+            ],
+            "max": [
+              1.55385,
+              3.924,
+              -18.211
+            ],
+            "size": [
+              3.1077,
+              3.809,
+              20.958
+            ]
+          }
+        },
+        "CAF car 03": {
+          "meshes": 666,
+          "triangles": 163382,
+          "bounds": {
+            "min": [
+              -1.55385,
+              0.115,
+              -60.129
+            ],
+            "max": [
+              1.55385,
+              3.924,
+              -39.171
+            ],
+            "size": [
+              3.1077,
+              3.809,
+              20.958
+            ]
+          }
+        },
+        "CAF car 04": {
+          "meshes": 666,
+          "triangles": 163382,
+          "bounds": {
+            "min": [
+              -1.55385,
+              0.115,
+              -81.089
+            ],
+            "max": [
+              1.55385,
+              3.924,
+              -60.131
+            ],
+            "size": [
+              3.1077,
+              3.809,
+              20.958
+            ]
+          }
+        },
+        "CAF car 05": {
+          "meshes": 666,
+          "triangles": 163382,
+          "bounds": {
+            "min": [
+              -1.55385,
+              0.115,
+              -102.049
+            ],
+            "max": [
+              1.55385,
+              3.924,
+              -81.091
+            ],
+            "size": [
+              3.1077,
+              3.809,
+              20.95801
+            ]
+          }
+        },
+        "CAF car 06": {
+          "meshes": 666,
+          "triangles": 163382,
+          "bounds": {
+            "min": [
+              -1.55385,
+              0.115,
+              -123.009
+            ],
+            "max": [
+              1.55385,
+              3.924,
+              -102.051
+            ],
+            "size": [
+              3.1077,
+              3.809,
+              20.958
+            ]
+          }
+        },
+        "CAF car 07": {
+          "meshes": 677,
+          "triangles": 182622,
+          "bounds": {
+            "min": [
+              -1.55385,
+              0.115,
+              -144.63434
+            ],
+            "max": [
+              1.55385,
+              3.924,
+              -123.011
+            ],
+            "size": [
+              3.1077,
+              3.809,
+              21.62334
+            ]
+          }
+        },
+        "CAF interior 01": {
+          "meshes": 670,
+          "triangles": 78294,
+          "bounds": {
+            "min": [
+              -1.45193,
+              1.026,
+              -18.211
+            ],
+            "max": [
+              1.45193,
+              3.4,
+              0.415
+            ],
+            "size": [
+              2.90387,
+              2.374,
+              18.626
+            ]
+          }
+        },
+        "CAF interior 02": {
+          "meshes": 738,
+          "triangles": 91254,
+          "bounds": {
+            "min": [
+              -1.45193,
+              1.026,
+              -39.171
+            ],
+            "max": [
+              1.45193,
+              3.4,
+              -18.209
+            ],
+            "size": [
+              2.90387,
+              2.374,
+              20.962
+            ]
+          }
+        },
+        "CAF interior 03": {
+          "meshes": 738,
+          "triangles": 91254,
+          "bounds": {
+            "min": [
+              -1.45193,
+              1.026,
+              -60.131
+            ],
+            "max": [
+              1.45193,
+              3.4,
+              -39.169
+            ],
+            "size": [
+              2.90387,
+              2.374,
+              20.96199
+            ]
+          }
+        },
+        "CAF interior 04": {
+          "meshes": 738,
+          "triangles": 91254,
+          "bounds": {
+            "min": [
+              -1.45193,
+              1.026,
+              -81.091
+            ],
+            "max": [
+              1.45193,
+              3.4,
+              -60.129
+            ],
+            "size": [
+              2.90387,
+              2.374,
+              20.96199
+            ]
+          }
+        },
+        "CAF interior 05": {
+          "meshes": 738,
+          "triangles": 91254,
+          "bounds": {
+            "min": [
+              -1.45193,
+              1.026,
+              -102.05099
+            ],
+            "max": [
+              1.45193,
+              3.4,
+              -81.089
+            ],
+            "size": [
+              2.90387,
+              2.374,
+              20.96199
+            ]
+          }
+        },
+        "CAF interior 06": {
+          "meshes": 738,
+          "triangles": 91254,
+          "bounds": {
+            "min": [
+              -1.45193,
+              1.026,
+              -123.011
+            ],
+            "max": [
+              1.45193,
+              3.4,
+              -102.049
+            ],
+            "size": [
+              2.90387,
+              2.374,
+              20.962
+            ]
+          }
+        },
+        "CAF interior 07": {
+          "meshes": 670,
+          "triangles": 78294,
+          "bounds": {
+            "min": [
+              -1.45193,
+              1.026,
+              -141.63499
+            ],
+            "max": [
+              1.45193,
+              3.4,
+              -123.009
+            ],
+            "size": [
+              2.90387,
+              2.374,
+              18.62599
+            ]
+          }
+        }
+      }
+    },
+    "environment": {
+      "path": "models/blender/environment.glb",
+      "meshes": 632,
+      "triangles": 813184,
+      "bounds": {
+        "min": [
+          -23.0,
+          -3.18,
+          -240.0
+        ],
+        "max": [
+          48.0,
+          12.305,
+          800.0
+        ],
+        "size": [
+          71.0,
+          15.485,
+          1040.0
+        ]
+      },
+      "collections": {
+        "Linea 1 route": {
+          "meshes": 8,
+          "triangles": 15960,
+          "bounds": {
+            "min": [
+              -1.59,
+              -0.41,
+              -240.0
+            ],
+            "max": [
+              11.59,
+              0.34,
+              800.0
+            ],
+            "size": [
+              13.18,
+              0.75,
+              1040.0
+            ]
+          }
+        },
+        "Station Caño Amarillo": {
+          "meshes": 66,
+          "triangles": 156912,
+          "bounds": {
+            "min": [
+              -7.32,
+              -0.88,
+              -145.10201
+            ],
+            "max": [
+              11.52,
+              6.44,
+              5.1025
+            ],
+            "size": [
+              18.84,
+              7.32,
+              150.2045
+            ]
+          }
+        },
+        "Station Capitolio": {
+          "meshes": 124,
+          "triangles": 156556,
+          "bounds": {
+            "min": [
+              -9.99,
+              -0.39,
+              14.999
+            ],
+            "max": [
+              13.99,
+              10.17685,
+              165.00101
+            ],
+            "size": [
+              23.98,
+              10.56685,
+              150.00201
+            ]
+          }
+        },
+        "Station Bellas Artes": {
+          "meshes": 109,
+          "triangles": 115056,
+          "bounds": {
+            "min": [
+              -3.14,
+              -0.39,
+              174.99899
+            ],
+            "max": [
+              13.14,
+              8.5475,
+              325.00101
+            ],
+            "size": [
+              16.28,
+              8.9375,
+              150.00201
+            ]
+          }
+        },
+        "Station Plaza Venezuela": {
+          "meshes": 135,
+          "triangles": 187940,
+          "bounds": {
+            "min": [
+              -14.14,
+              -3.18,
+              334.99899
+            ],
+            "max": [
+              11.34,
+              8.4975,
+              485.00101
+            ],
+            "size": [
+              25.48,
+              11.6775,
+              150.00201
+            ]
+          }
+        },
+        "Station Altamira": {
+          "meshes": 121,
+          "triangles": 115472,
+          "bounds": {
+            "min": [
+              -3.14,
+              -0.39,
+              494.99899
+            ],
+            "max": [
+              13.14,
+              8.5475,
+              645.00098
+            ],
+            "size": [
+              16.28,
+              8.9375,
+              150.00198
+            ]
+          }
+        },
+        "Altamira Plaza entrance": {
+          "meshes": 35,
+          "triangles": 53128,
+          "bounds": {
+            "min": [
+              -23.0,
+              4.82,
+              570.0
+            ],
+            "max": [
+              48.0,
+              10.44,
+              600.0
+            ],
+            "size": [
+              71.0,
+              5.62,
+              30.0
+            ]
+          }
+        },
+        "Bellas Artes cultural context": {
+          "meshes": 34,
+          "triangles": 12160,
+          "bounds": {
+            "min": [
+              -18.5,
+              4.82,
+              249.60001
+            ],
+            "max": [
+              -1.5,
+              12.305,
+              271.0
+            ],
+            "size": [
+              17.0,
+              7.485,
+              21.39999
+            ]
+          }
+        }
+      }
+    }
+  },
+  "lighting": {
+    "areaLights": [
+      {
+        "name": "Caño Amarillo diffuse skylight",
+        "collection": "Station Caño Amarillo",
+        "position": [
+          2.0,
+          6.199999809265137,
+          -125.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 500.0,
+        "width": 12.0,
+        "height": 12.0
+      },
+      {
+        "name": "Caño Amarillo diffuse skylight.001",
+        "collection": "Station Caño Amarillo",
+        "position": [
+          2.0,
+          6.199999809265137,
+          -80.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 500.0,
+        "width": 12.0,
+        "height": 12.0
+      },
+      {
+        "name": "Caño Amarillo diffuse skylight.002",
+        "collection": "Station Caño Amarillo",
+        "position": [
+          2.0,
+          6.199999809265137,
+          -35.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 500.0,
+        "width": 12.0,
+        "height": 12.0
+      },
+      {
+        "name": "Capitolio platform diffuse wash",
+        "collection": "Station Capitolio",
+        "position": [
+          2.0,
+          4.300000190734863,
+          34.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 240.0,
+        "width": 8.0,
+        "height": 5.0
+      },
+      {
+        "name": "Capitolio platform diffuse wash.001",
+        "collection": "Station Capitolio",
+        "position": [
+          2.0,
+          4.300000190734863,
+          82.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 240.0,
+        "width": 8.0,
+        "height": 5.0
+      },
+      {
+        "name": "Capitolio platform diffuse wash.002",
+        "collection": "Station Capitolio",
+        "position": [
+          2.0,
+          4.300000190734863,
+          132.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 240.0,
+        "width": 8.0,
+        "height": 5.0
+      },
+      {
+        "name": "Bellas Artes platform diffuse wash",
+        "collection": "Station Bellas Artes",
+        "position": [
+          5.0,
+          4.300000190734863,
+          194.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 240.0,
+        "width": 8.0,
+        "height": 5.0
+      },
+      {
+        "name": "Bellas Artes platform diffuse wash.001",
+        "collection": "Station Bellas Artes",
+        "position": [
+          5.0,
+          4.300000190734863,
+          242.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 240.0,
+        "width": 8.0,
+        "height": 5.0
+      },
+      {
+        "name": "Bellas Artes platform diffuse wash.002",
+        "collection": "Station Bellas Artes",
+        "position": [
+          5.0,
+          4.300000190734863,
+          292.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 240.0,
+        "width": 8.0,
+        "height": 5.0
+      },
+      {
+        "name": "Plaza Venezuela platform diffuse wash",
+        "collection": "Station Plaza Venezuela",
+        "position": [
+          2.0,
+          4.300000190734863,
+          354.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 240.0,
+        "width": 8.0,
+        "height": 5.0
+      },
+      {
+        "name": "Plaza Venezuela platform diffuse wash.001",
+        "collection": "Station Plaza Venezuela",
+        "position": [
+          2.0,
+          4.300000190734863,
+          402.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 240.0,
+        "width": 8.0,
+        "height": 5.0
+      },
+      {
+        "name": "Plaza Venezuela platform diffuse wash.002",
+        "collection": "Station Plaza Venezuela",
+        "position": [
+          2.0,
+          4.300000190734863,
+          452.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 240.0,
+        "width": 8.0,
+        "height": 5.0
+      },
+      {
+        "name": "Altamira platform diffuse wash",
+        "collection": "Station Altamira",
+        "position": [
+          5.0,
+          4.300000190734863,
+          514.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 240.0,
+        "width": 8.0,
+        "height": 5.0
+      },
+      {
+        "name": "Altamira platform diffuse wash.001",
+        "collection": "Station Altamira",
+        "position": [
+          5.0,
+          4.300000190734863,
+          562.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 240.0,
+        "width": 8.0,
+        "height": 5.0
+      },
+      {
+        "name": "Altamira platform diffuse wash.002",
+        "collection": "Station Altamira",
+        "position": [
+          5.0,
+          4.300000190734863,
+          612.0
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          -0.0,
+          -0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "power": 240.0,
+        "width": 8.0,
+        "height": 5.0
+      }
+    ],
+    "trainAreaLights": [
+      {
+        "name": "CAF interior ceiling area wash",
+        "collection": "CAF interior 01",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -13.729999542236328
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.001",
+        "collection": "CAF interior 01",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -7.730000019073486
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.002",
+        "collection": "CAF interior 01",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -1.7300000190734863
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.003",
+        "collection": "CAF interior 02",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -34.689998626708984
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.004",
+        "collection": "CAF interior 02",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -28.690000534057617
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.005",
+        "collection": "CAF interior 02",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -22.690000534057617
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.006",
+        "collection": "CAF interior 03",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -55.650001525878906
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.007",
+        "collection": "CAF interior 03",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -49.650001525878906
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.008",
+        "collection": "CAF interior 03",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -43.650001525878906
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.009",
+        "collection": "CAF interior 04",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -76.61000061035156
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.010",
+        "collection": "CAF interior 04",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -70.61000061035156
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.011",
+        "collection": "CAF interior 04",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -64.61000061035156
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.012",
+        "collection": "CAF interior 05",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -97.56999969482422
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.013",
+        "collection": "CAF interior 05",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -91.56999969482422
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.014",
+        "collection": "CAF interior 05",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -85.56999969482422
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.015",
+        "collection": "CAF interior 06",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -118.52999877929688
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.016",
+        "collection": "CAF interior 06",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -112.52999877929688
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.017",
+        "collection": "CAF interior 06",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -106.52999877929688
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.018",
+        "collection": "CAF interior 07",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -127.48999786376953
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.019",
+        "collection": "CAF interior 07",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -133.49000549316406
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      },
+      {
+        "name": "CAF interior ceiling area wash.020",
+        "collection": "CAF interior 07",
+        "position": [
+          0.0,
+          3.2899999618530273,
+          -139.49000549316406
+        ],
+        "quaternion": [
+          -0.7071067690849304,
+          0.0,
+          0.0,
+          0.7071067690849304
+        ],
+        "color": [
+          0.8199999928474426,
+          0.8999999761581421,
+          1.0
+        ],
+        "power": 42.0,
+        "width": 1.7999999523162842,
+        "height": 4.699999809265137
+      }
+    ]
+  }
+}
