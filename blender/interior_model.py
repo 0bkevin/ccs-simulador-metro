@@ -1,4 +1,4 @@
-"""Photo-led native passenger saloon for the Caracas CAF Serie 6.
+"""Photo-led native passenger and operator interiors for the Caracas CAF Serie 6.
 
 Delivery photograph (Beasain, November 2010) and ALAMYS's April 2015
 Caracas interior photo govern the finishes and longitudinal seating. These
@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import math
 import random
-import os
 import bpy
 from mathutils import Vector
 from body_geometry import BODY_HALF_LENGTH, CAR_PITCH, door_centres, saloon_bay_centres, body_width
@@ -223,7 +222,9 @@ def _bench(side,zc,count,priority,mats,coll):
         face=(0,1,2,3) if side<0 else (3,2,1,0)
         obj=_mesh('CAF interior priority seating sign',verts,[face],mats['priority'],coll)
         uv=obj.data.uv_layers.new(name='priority sign')
-        for loop,co in zip(uv.data,[(0,0),(1,0),(1,1),(0,1)]):loop.uv=co
+        for loop in obj.data.loops:
+            _,y,zz=obj.data.vertices[loop.vertex_index].co
+            uv.data[loop.index].uv=(.5+side*(zz-zc)/w,(y-y0)/(y1-y0))
     return width
 
 
@@ -364,7 +365,7 @@ def _fittings(center,direction,driving,mats,coll):
 
 
 def build_interior():
-    """Replace only CAF interior NN collections and return the seven collections.
+    """Replace CAF interior NN, including both operator cabs, and return them.
 
     Does not alter exterior, stations, source path or scene render settings.
     Root integration must open shell windows and end gangways separately.

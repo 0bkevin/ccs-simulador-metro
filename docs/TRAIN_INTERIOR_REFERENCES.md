@@ -70,6 +70,14 @@ interior panel switches between passenger accommodation and the two cab views.
 Dragging changes the view direction. W/S and E retain their existing train and
 door commands. The passenger travel slider is hidden in cab views.
 
+Native review captures: [operator desk](../blender/qa/native-operator-2026-09-08.png),
+[operator seat and partition](../blender/qa/native-operator-seat-2026-09-08.png),
+and [passenger saloon](../blender/qa/native-saloon-2026-09-08.png). These are
+Cycles renders of the authored meshes. Both cabs pass a native ray sweep to
+every DMI/HMI display corner: the apertures cut through the bowed console skin.
+The web renderer omits opaque PCF shadows from alpha train glazing, allowing
+the windows to illuminate the interior consistently with their transparency.
+
 ## Direct visual evidence
 
 - [First-train acceptance in Beasain, November 2010](https://www.aporrea.org/actualidad/n170480.html).
@@ -181,8 +189,28 @@ inter-car bridge floors. The tests also cover the moving passenger camera,
 car-relative lighting and consistent look controls in the reversed driving car.
 The original passenger pass passed 34 tests. The current pass adds tests of
 both operator sightlines, cab floors, guillotine-window clearance, HMI active
-dimensions, moving camera anchors and controller response. Current validation
-results and captures are recorded below after review.
+dimensions, moving camera anchors, exposed instrument-screen corners and
+controller response. On 8 September 2026, all **64 tests passed** and the
+production build succeeded. The final native source SHA-256 is
+`09763bd2056b145d94362d6228bc6c3d23ca81c98b9d00e3ef02af6aad54d245`;
+the exported manifest matches it, and the public and production train,
+environment and manifest files match byte-for-byte.
+
+Final browser captures of this operator and passenger refinement:
+
+- [Front operator desk](../blender/qa/web-operator-interior.jpg).
+- [Reversed rear operator desk](../blender/qa/web-operator-rear-interior.jpg).
+- [Operator seat, side door and partition](../blender/qa/web-operator-seat-interior.jpg).
+- [Passenger saloon and priority seating](../blender/qa/web-saloon-interior.jpg).
+- [Seated operator view in the playable scene](../blender/qa/web-playable-operator-interior.jpg).
+
+The final playable-scene check exercised the door button through fully closed
+and fully open states (animation fractions 0 and 1). The cab readouts updated
+with those states, traction moved the front controller by 0.28 radians after
+the doors closed, and the rear controller remained neutral. Native Cycles and
+browser reviews checked both cabs, screen openings, seat upholstery, saloon
+lighting and readable priority signs. The new cab and passenger presets were
+also exercised across driving, intermediate and reversed driving car selections.
 
 Browser review exercised all seven car selections and the seat, door and
 gangway presets. A deterministic simulation advance of 20.8725 m moved the

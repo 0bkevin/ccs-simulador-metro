@@ -30,6 +30,14 @@ export function createWorld(THREE, renderer, stations = [], assets) {
   train.name = "Blender train · 7 cars";
   root.add(train);
   prepareBlenderMeshes(train, renderer);
+  // PCF shadows cannot represent the alpha glazing. Keep it from casting a
+  // solid window-shaped shadow across the passenger saloon or operator desk.
+  train.traverse(object => {
+    if(object.isMesh) {
+      const materials=Array.isArray(object.material)?object.material:[object.material];
+      object.castShadow=materials.some(material=>!material.transparent);
+    }
+  });
   const doors = createTrainDoors(train);
 
   const cameras = {

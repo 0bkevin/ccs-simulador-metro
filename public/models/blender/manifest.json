@@ -2,7 +2,7 @@
   "schema": "metro-blender-web-export/1",
   "source": {
     "file": "metro_caracas_line1.blend",
-    "sha256": "e3bd94e663e84065b435989a30a4b6c3ce559d53125ad0c375d8332f95f62831"
+    "sha256": "09763bd2056b145d94362d6228bc6c3d23ca81c98b9d00e3ef02af6aad54d245"
   },
   "coordinateSystem": {
     "up": "Y",
@@ -281,8 +281,8 @@
   "assets": {
     "train": {
       "path": "models/blender/train.glb",
-      "meshes": 11776,
-      "triangles": 2618300,
+      "meshes": 11778,
+      "triangles": 2623612,
       "bounds": {
         "min": [
           -1.55385,
@@ -449,23 +449,23 @@
           }
         },
         "CAF interior 01": {
-          "meshes": 1061,
-          "triangles": 161782,
+          "meshes": 1062,
+          "triangles": 164438,
           "bounds": {
             "min": [
-              -1.45193,
-              1.02,
+              -1.49,
+              0.83,
               -18.211
             ],
             "max": [
-              1.45193,
-              3.45,
-              2.63
+              1.49,
+              3.7925,
+              2.80591
             ],
             "size": [
-              2.90387,
-              2.43,
-              20.841
+              2.98,
+              2.9625,
+              21.01691
             ]
           }
         },
@@ -575,23 +575,23 @@
           }
         },
         "CAF interior 07": {
-          "meshes": 1061,
-          "triangles": 161782,
+          "meshes": 1062,
+          "triangles": 164438,
           "bounds": {
             "min": [
-              -1.45193,
-              1.02,
-              -143.85001
+              -1.49,
+              0.83,
+              -144.02591
             ],
             "max": [
-              1.45193,
-              3.45,
+              1.49,
+              3.7925,
               -123.009
             ],
             "size": [
-              2.90387,
-              2.43,
-              20.841
+              2.98,
+              2.9625,
+              21.01691
             ]
           }
         }

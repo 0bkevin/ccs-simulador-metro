@@ -33,6 +33,7 @@ const buttons = [...document.querySelectorAll("[data-view]")]; const names = { t
 let bounds, frontDoorZ = -.73, activeView = 'threequarter';
 let doors, interior, cabInstruments, lastTime = performance.now(), lastRevision = -1, needsRender = true;
 const carSelect=document.querySelector('#review-car');
+carSelect.value=String(Math.max(1,Math.min(7,Number(new URLSearchParams(location.search).get('car'))||1)));
 carSelect.onchange=()=>frame(activeView);
 const doorState = { doorsOpen: false, doorSide: -1 };
 const openButton = document.querySelector('#review-open-doors');
@@ -98,6 +99,12 @@ function frame(view) {
   } else camera.clearViewOffset();
   camera.position.copy(position); controls.update(); controls.enableDamping = true; buttons.forEach((b) => b.classList.toggle("active", b.dataset.view === view)); status.textContent = `${names[view]} · BLENDER GLB`;
   interior?.update(0,false,camera.position.z);needsRender=true;
+  const entry=document.querySelector('.interior-link');
+  entry.href=['operator','cab-seat'].includes(view)?'/?view=operator':'/?view=interior';
+  entry.textContent=['operator','cab-seat'].includes(view)?'ABRIR SERVICIO EN CABINA →':'ENTRAR AL INTERIOR →';
+  const url=new URL(location.href);url.searchParams.set('view',view);
+  if(inside)url.searchParams.set('car',carSelect.value);else url.searchParams.delete('car');
+  history.replaceState(null,'',url);
 }
 function fail(error) { console.error(error); status.textContent = "NO SE PUDO CARGAR EL GLB"; document.querySelector("#review-error").hidden = false; }
 buttons.forEach((b) => b.addEventListener("click", () => frame(b.dataset.view)));
