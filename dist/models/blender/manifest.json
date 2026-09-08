@@ -2,7 +2,7 @@
   "schema": "metro-blender-web-export/1",
   "source": {
     "file": "metro_caracas_line1.blend",
-    "sha256": "7cf755d17abe163c9c460743a660258dd71e0fb277035acd838cd05b6e9268ea"
+    "sha256": "6fe4d62fbfa47bdbb85011324774702f6ad04a1428ecc64062ef500c44b75640"
   },
   "coordinateSystem": {
     "up": "Y",
@@ -536,8 +536,8 @@
     },
     "environment": {
       "path": "models/blender/environment.glb",
-      "meshes": 858,
-      "triangles": 1976252,
+      "meshes": 848,
+      "triangles": 1973156,
       "bounds": {
         "min": [
           -23.0,
@@ -704,8 +704,8 @@
           }
         },
         "Station Capitolio": {
-          "meshes": 140,
-          "triangles": 268320,
+          "meshes": 139,
+          "triangles": 267960,
           "bounds": {
             "min": [
               -9.99,
@@ -725,8 +725,8 @@
           }
         },
         "Station Bellas Artes": {
-          "meshes": 124,
-          "triangles": 208524,
+          "meshes": 122,
+          "triangles": 209100,
           "bounds": {
             "min": [
               -4.14,
@@ -746,8 +746,8 @@
           }
         },
         "Station Plaza Venezuela": {
-          "meshes": 149,
-          "triangles": 214976,
+          "meshes": 147,
+          "triangles": 216200,
           "bounds": {
             "min": [
               -14.14,
@@ -767,8 +767,8 @@
           }
         },
         "Station Altamira": {
-          "meshes": 135,
-          "triangles": 209480,
+          "meshes": 133,
+          "triangles": 210344,
           "bounds": {
             "min": [
               -4.14,
@@ -788,8 +788,8 @@
           }
         },
         "Altamira Plaza entrance": {
-          "meshes": 35,
-          "triangles": 55880,
+          "meshes": 34,
+          "triangles": 53000,
           "bounds": {
             "min": [
               -23.0,
@@ -809,8 +809,8 @@
           }
         },
         "Caño Amarillo urban context": {
-          "meshes": 21,
-          "triangles": 29768,
+          "meshes": 20,
+          "triangles": 27704,
           "bounds": {
             "min": [
               -23.0,
@@ -830,8 +830,8 @@
           }
         },
         "Bellas Artes cultural context": {
-          "meshes": 40,
-          "triangles": 15512,
+          "meshes": 39,
+          "triangles": 15056,
           "bounds": {
             "min": [
               -18.5,

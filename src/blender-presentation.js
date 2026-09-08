@@ -12,7 +12,7 @@ export function configureBlenderRenderer(renderer) {
 }
 
 export function prepareBlenderMeshes(root, renderer) {
-  const anisotropy = Math.min(4, renderer?.capabilities.getMaxAnisotropy() || 1);
+  const anisotropy = Math.min(8, renderer?.capabilities.getMaxAnisotropy() || 1);
   root.traverse(object => {
     if (!object.isMesh) return;
     object.castShadow = true;
@@ -71,6 +71,7 @@ export function createBlenderLighting(scene, renderer, manifest) {
   function focus(target, collection, exterior = false, drawing = false) {
     const tunnel = collection?.startsWith('Tunnel ');
     const daylight = exterior || collection === 'Station Caño Amarillo' || drawing;
+    scene.background.set(daylight ? 0x18212a : 0x060808);
     ambient.intensity = daylight ? .48 : tunnel ? .035 : .13;
     key.intensity = daylight ? 1.8 : 0;
     fill.intensity = daylight ? .22 : 0;

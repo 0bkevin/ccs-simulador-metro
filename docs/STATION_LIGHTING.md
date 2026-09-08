@@ -84,3 +84,11 @@ The native review does not save over the source scene. `--station altamira`,
 `--station tunnel`, `--station details`, `--samples 64` and `--width 1120` can
 narrow or refine it. The automated export checks validate actual fixture
 attachment, level/bore separation, packed PBR maps and the vestibule floor.
+
+The completed pass has 39 passing tests and a successful production build.
+Source hash and public/production asset parity were checked after export.
+The model contains 618 station sources, 274 tunnel sources and two entrance
+sources; these are modeled counts, not a recovered electrical schedule.
+All five station platforms were also inspected in the browser, with screenshots
+saved as `blender/qa/lighting/web-station-1.jpg` through `web-station-5.jpg`.
+The environment is 110.8 MiB and remains intended primarily for desktop use.

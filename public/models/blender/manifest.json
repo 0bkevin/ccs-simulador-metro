@@ -2,7 +2,7 @@
   "schema": "metro-blender-web-export/1",
   "source": {
     "file": "metro_caracas_line1.blend",
-    "sha256": "6d1edd37c87487c947f373c5d4a63689059e803d56a5c53764ad8678a0295ec1"
+    "sha256": "6fe4d62fbfa47bdbb85011324774702f6ad04a1428ecc64062ef500c44b75640"
   },
   "coordinateSystem": {
     "up": "Y",
