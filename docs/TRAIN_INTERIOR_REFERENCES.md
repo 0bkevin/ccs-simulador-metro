@@ -303,3 +303,25 @@ byte-for-byte. Station geometry and lighting metadata remain unchanged.
 
 The optical pass also retains a [before capture](../blender/qa/web-saloon-lights-before-optics.jpg)
 at the same passenger viewpoint as the updated station capture.
+
+## Web saloon brightness and shadows
+
+The web presentation now uses 30% of the previous direct saloon output and
+55% of the exported diffuser emission. Reflected ceiling fill is derived
+from that reduced output with a 14% bounce fraction, rather than retaining
+its earlier bright fill. The native Cycles material, lamp power, mesh and
+source hash remain unchanged: this is a renderer calibration, not a change
+to the train's physical fixtures. The enclosed passenger view also attenuates
+unshadowed station/studio fill, and excludes the cab lamp behind its partition.
+Exterior and operator views retain their own environmental-light settings.
+
+Four 512-pixel spot shadow maps approximate nearby portions of the two long
+saloon lights. They stay at fixed lens-section centres, blend as the view moves,
+and travel with the consist. Their local contribution replaces part of the
+area-light output; it is not added at full strength on top. PCF filtering
+softens the seat, pole and fitting shadows. Maps and the shadow-filter change
+are limited to passenger interior views. This is a bounded real-time
+approximation of area-light occlusion, not a Cycles-equivalent shadow solution.
+
+Current game captures: [station](../blender/qa/web-saloon-natural-station.jpg)
+and [tunnel](../blender/qa/web-saloon-natural-tunnel.jpg).

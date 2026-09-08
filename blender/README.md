@@ -63,6 +63,9 @@ los difusores y las fuentes del salón conservando puertas, asientos y cabinas.
 El material opal incluye un mapa de emisión empaquetado para distinguir la
 curvatura y los extremos. WebGL aproxima la luz reflejada hacia el techo con
 una fuente tenue por salón visible; no representa lámparas físicas adicionales.
+La exposición web del salón está calibrada por separado de Cycles. Cuatro
+mapas locales de sombras, alineados con los difusores, dan sombra a asientos
+y herrajes; se desactivan al salir del interior de pasajeros.
 
 Double-click `run_metro_game.command` in Finder, or run:
 
