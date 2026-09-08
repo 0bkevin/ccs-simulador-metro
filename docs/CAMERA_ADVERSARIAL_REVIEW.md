@@ -1,6 +1,6 @@
 # Camera adversarial review
 
-Reviewed camera change `841d730` with an independent review agent and a separate
+Reviewed camera change `a1e1490` with an independent review agent and a separate
 local integration/browser review. All four confirmed findings below were
 reproduced before fixing them.
 

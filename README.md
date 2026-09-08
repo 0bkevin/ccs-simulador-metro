@@ -32,6 +32,11 @@ La investigación documenta la Línea 1, su orden de estaciones, 750 V CC por te
 
 ## Desarrollo
 
+Los archivos `environment.glb` de `public/` y `dist/` se guardan con Git LFS.
+Después de clonar, descarga los modelos antes de ejecutar o construir el juego:
+
+    git lfs install
+    git lfs pull
     npm install
     npm run dev
 
