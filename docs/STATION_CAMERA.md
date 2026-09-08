@@ -25,7 +25,8 @@ section and entrance views limit orbit angles and distance around a fixed
 focus. Their intended cutaway and exterior perspectives remain available.
 
 The game's moving platform and exterior cameras use clear lanes beside the
-stairs and columns. The simulation's configured route end stops an overrun
+stairs and columns, handing off to the bore camera one metre inside the station
+ends to clear the overlapping tunnel lining. The simulation's configured route end stops an overrun
 before its leading camera can leave the final tunnel; the existing missed-stop
 recovery returns the train to Altamira.
 
@@ -37,3 +38,8 @@ final stop and recovery. Browser checks additionally exercise wheel events,
 mouse and touch handlers, mobile layout, the in-game view buttons and returning
 to the paused service. Native `.blend` and GLB geometry are unchanged by this
 camera update.
+
+The follow-up [adversarial review](CAMERA_ADVERSARIAL_REVIEW.md) found and fixed
+four regressions. Accepted collision poses now also satisfy the orbit limits,
+tunnel look-ahead targets remain stable after slider movement, and the in-game
+plan refits when the viewport changes orientation.

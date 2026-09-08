@@ -98,14 +98,17 @@ export function createWorld(THREE, renderer, stations = [], assets) {
     activeStation = stations.findIndex(stop => anchor <= stop.distance + 5);
     if (activeStation < 0) activeStation = stations.length - 1;
     const station = stations[activeStation];
-    const onPlatform = anchor >= station.distance - 145 && anchor <= station.distance + 5;
+    // The neighboring tunnel lining overlaps the slab ends. Hand off a metre
+    // inside either end, leaving clearance for the camera's near-plane corners.
+    const inPlatformLane = (position, stop) => position >= stop.distance - 144 && position <= stop.distance + 4;
+    const onPlatform = inPlatformLane(anchor, station);
     const island = ["Bellas Artes", "Altamira"].includes(station?.name);
     // Clear camera lanes run beside the escalators and colonnades. The old
     // centerline positions crossed the island cores and Capitolio's stairs.
     const x = island ? 2.5 : station?.name === "Capitolio" ? -2.65 : -3.9;
     cameras.platform.position.set(onPlatform ? x : 0, 2.73, onPlatform ? z - 84 : z + 5);
     cameras.platform.lookAt(onPlatform ? x : 0, 2.98, onPlatform ? z - 69 : z + 23);
-    const exteriorAtStation = stations.some(stop => z + 4.6 >= stop.distance - 145 && z + 4.6 <= stop.distance + 5);
+    const exteriorAtStation = stations.some(stop => inPlatformLane(z + 4.6, stop));
     cameras.exterior.position.set(exteriorAtStation ? (island ? 7.5 : x) : 0, 2.73, z + 4.6);
     cameras.exterior.lookAt(0, 2.1, exteriorAtStation ? z - 4 : z + 22);
     interior.update(z, cameraMode === "interior" && !inspection, activeCamera().position.z);
@@ -124,6 +127,13 @@ export function createWorld(THREE, renderer, stations = [], assets) {
       camera.aspect = width / Math.max(1, height);
       camera.updateProjectionMatrix();
     });
+    if (inspection?.kind === 'plan') {
+      const { index } = inspection;
+      const view = getStationView(index,'plan',cameras.inspection.aspect);
+      inspection = { index, ...view };
+      cameraGuard.setView(index,view);
+    } else cameraGuard.constrain();
+    revision++;
   }
   function dispose() {
     root.traverse((object) => {

@@ -70,7 +70,7 @@ export function createStationCamera({ camera, controls = null, environment }) {
     Object.assign(controls, { enableDamping: false, enableRotate: true, enablePan: true,
       screenSpacePanning: true, zoomToCursor: false, minDistance: .45, maxDistance: 35,
       minPolarAngle: .06, maxPolarAngle: Math.PI-.06, minAzimuthAngle: -Infinity, maxAzimuthAngle: Infinity,
-      minTargetRadius: 0, maxTargetRadius: 180, rotateSpeed: .65, panSpeed: .65, zoomSpeed: .7 });
+      minTargetRadius: 0, maxTargetRadius: Infinity, rotateSpeed: .65, panSpeed: .65, zoomSpeed: .7 });
     controls.cursor.copy(target);
     if (view.kind === 'plan') {
       controls.enableRotate = false;
@@ -104,12 +104,28 @@ export function createStationCamera({ camera, controls = null, environment }) {
     } else if (!state.region) target.fromArray(state.view.target);
     else {
       const rects = state.region.rectangles;
-      target.x = clamp(target.x,Math.min(...rects.map(b=>b.x0)),Math.max(...rects.map(b=>b.x1)));
-      target.z = clamp(target.z,Math.min(...rects.map(b=>b.z0)),Math.max(...rects.map(b=>b.z1)));
-      target.y = clamp(target.y,state.region.minY-.5,state.region.maxY+.3);
+      // The camera stays on the floor; its focus may look beyond that region.
+      // In particular, the tunnel slider looks 18 m beyond its end position.
+      const reach = controls?.maxDistance || 35;
+      target.x = clamp(target.x,Math.min(...rects.map(b=>b.x0))-reach,Math.max(...rects.map(b=>b.x1))+reach);
+      target.z = clamp(target.z,Math.min(...rects.map(b=>b.z0))-reach,Math.max(...rects.map(b=>b.z1))+reach);
+      target.y = clamp(target.y,state.region.minY-reach,state.region.maxY+reach);
     }
   }
   function remember() { lastPosition.copy(camera.position); lastTarget.copy(target); }
+  function withinControlLimits(position = camera.position) {
+    if (!controls) return true;
+    const spherical = new Spherical().setFromVector3(position.clone().sub(target)), epsilon = 1e-6;
+    if (spherical.radius < controls.minDistance-epsilon || spherical.radius > controls.maxDistance+epsilon ||
+        spherical.phi < controls.minPolarAngle-epsilon || spherical.phi > controls.maxPolarAngle+epsilon) return false;
+    let min = controls.minAzimuthAngle, max = controls.maxAzimuthAngle;
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return true;
+    // Match OrbitControls' interval across the -PI/PI seam.
+    if (min < -Math.PI) min += Math.PI*2; else if (min > Math.PI) min -= Math.PI*2;
+    if (max < -Math.PI) max += Math.PI*2; else if (max > Math.PI) max -= Math.PI*2;
+    return min <= max ? spherical.theta >= min-epsilon && spherical.theta <= max+epsilon
+      : spherical.theta >= min-epsilon || spherical.theta <= max+epsilon;
+  }
   function fitNearPlane() {
     // Keep the whole near plane inside the same clearance sphere, even after
     // resizing to an unusually wide viewport while pressed against a wall.
@@ -135,7 +151,7 @@ export function createStationCamera({ camera, controls = null, environment }) {
         const original = camera.position.clone();
         outer: for (const distance of [.5,1,1.5,2]) for (const [x,y,z] of [[0,0,-1],[1,0,0],[-1,0,0],[0,1,0]]) {
           const p = original.clone().add(new Vector3(x,y,z).multiplyScalar(distance));
-          if ((!state.region || contains(state.region,p,radius)) && !state.collision.blocked(p,p,radius)) {
+          if ((!state.region || contains(state.region,p,radius)) && withinControlLimits(p) && !state.collision.blocked(p,p,radius)) {
             camera.position.copy(p); break outer;
           }
         }
@@ -168,6 +184,10 @@ export function createStationCamera({ camera, controls = null, environment }) {
       camera.position.set(target.x,height,target.z+.01);
     }
     if (pan && state.region) { target.add(camera.position.clone().sub(requested)); constrainTarget(); }
+    // A slide can shorten the orbit radius or cross an allowed viewing angle.
+    // Keep the previous valid pose in that case; otherwise OrbitControls would
+    // snap it back on the next interaction, even with no new movement input.
+    if (!withinControlLimits()) { camera.position.copy(lastPosition); target.copy(lastTarget); }
     camera.lookAt(target); camera.updateMatrixWorld(); remember(); adjusting = false;
     return true;
   }

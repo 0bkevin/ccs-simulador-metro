@@ -102,6 +102,57 @@ test('tunnel slider retains modeled approach buffers even for jumps past either 
   }
 });
 
+test('a tunnel slider move remains stable when orbit controls resume at either end', () => {
+  for (let i=0;i<5;i++) {
+    const {min,max} = getTunnelTravelRange(i);
+    guard.setView(i,getStationView(i,'tunnel'));
+    for (const z of [min,max,(min+max)/2]) {
+      guard.moveTunnel(z);
+      const before = camera.position.clone(), focus = controls.target.clone();
+      for (let n=0;n<3;n++) controls.update();
+      assert.ok(camera.position.distanceTo(before)<1e-6, `${i}/${z}: idle controls must not teleport the camera`);
+      assert.ok(controls.target.distanceTo(focus)<1e-6, `${i}/${z}: look-ahead target must remain stable`);
+      // A small zoom request moves the camera locally, including at the end.
+      camera.position.sub(controls.target).multiplyScalar(.99).add(controls.target);
+      controls.update(); safe(`${i}/${z}/resume zoom`);
+      assert.ok(camera.position.distanceTo(before)<.2);
+    }
+  }
+});
+
+test('collision-resolved orbits do not snap when controls update without new input', () => {
+  const camera = new THREE.PerspectiveCamera(68,1.6,.08,700);
+  const controls = new OrbitControls(camera);
+  const guard = createStationCamera({camera,controls,environment});
+  // Exercise OrbitControls' actual input deltas without needing a DOM in Node.
+  controls.domElement = { clientHeight:800,clientWidth:1280 };
+  controls.addEventListener('change',()=>guard.constrain());
+  const stable = label => {
+    const p = camera.position.clone(), t = controls.target.clone();
+    for (let n=0;n<3;n++) controls.update();
+    assert.ok(camera.position.distanceTo(p)<1e-4, `${label}: position snapped ${camera.position.distanceTo(p)} m`);
+    assert.ok(controls.target.distanceTo(t)<1e-4, `${label}: focus changed without input`);
+    assert.ok(guard.isClear() && guard.contains(),label);
+  };
+  guard.setView(4,getStationView(4,'entrance',1.6));
+  controls._dollyIn(.3); controls.update();
+  controls._rotateLeft(-1); controls._rotateUp(-.4); controls.update();
+  stable('Altamira entrance: orbit after zoom against architecture');
+  let seed = 3456;
+  const random = () => (seed = (Math.imul(1664525,seed)+1013904223)>>>0)/4294967296;
+  for (let i=0;i<5;i++) for (const kind of getStationView(i).views) {
+    guard.setView(i,getStationView(i,kind,1.6));
+    for (let n=0;n<150;n++) {
+      const action = Math.floor(random()*3), a = random()-.5, b = random()-.5;
+      if (action===0 && controls.enableRotate) { controls._rotateLeft(a*2); controls._rotateUp(b*1.2); }
+      if (action===1 && controls.enablePan) controls._pan(a*800,b*500);
+      if (action===2) controls._dollyIn(Math.exp(a*2));
+      controls.update(); stable(`${i}/${kind}/${n}`);
+    }
+  }
+  guard.dispose();
+});
+
 test('plan panning retains the drawing and section/exterior controls stay above and outside the model', () => {
   for (let i=0;i<5;i++) for (const kind of getStationView(i).views.filter(k=>['plan','section','entrance','south'].includes(k))) {
     const view = getStationView(i,kind,camera.aspect);
@@ -144,13 +195,40 @@ test('moving platform and exterior cameras follow clear lanes through all statio
   const manifest = JSON.parse(await fs.readFile(new URL('../public/models/blender/manifest.json',import.meta.url),'utf8'));
   const train = await load('train');
   const world = createWorld(THREE,null,manifest.stations,{environment,train,manifest});
-  const collision = createCameraCollision(world.stationAssemblies);
+  const collision = createCameraCollision([environment]);
   for (const mode of ['platform','exterior']) {
     world.setCameraMode(mode);
     for (const station of stationViews) for (let local=-144;local<5;local+=1.7) {
       world.update(0,station.distance+local+(mode==='platform'?84:-4.6));
       const p = world.camera.position;
       assert.equal(collision.blocked(p,p,cameraClearance(world.camera)),false, `${mode}/${station.name}: ${p.toArray()}`);
+    }
+    // Station lanes meet the tunnel lining here. Test the whole environment,
+    // including both sides of each handoff, at a much finer interval.
+    for (const station of stationViews) for (const seam of [-145,5]) for (let offset=-1.1;offset<=1.1;offset+=.05) {
+      world.update(0,station.distance+seam+offset+(mode==='platform'?84:-4.6));
+      const p = world.camera.position;
+      assert.equal(collision.blocked(p,p,cameraClearance(world.camera)),false, `${mode}/${station.name}/seam ${seam}: ${p.toArray()}`);
+    }
+  }
+  world.dispose();
+});
+
+test('in-game plans retain both station ends when resizing between portrait and landscape', async () => {
+  const manifest = JSON.parse(await fs.readFile(new URL('../public/models/blender/manifest.json',import.meta.url),'utf8'));
+  const train = await load('train');
+  const world = createWorld(THREE,null,manifest.stations,{environment,train,manifest});
+  for (let i=0;i<5;i++) {
+    const station = stationViews[i];
+    world.inspectStation(i,'plan');
+    for (const [width,height] of [[390,844],[1280,800]]) {
+      world.resize(width,height); world.update(0,2160);
+      for (const z of [station.distance-140,station.distance]) {
+        const projected = v(station.railCenters[1]/2,1.1,z).project(world.camera);
+        assert.ok(Math.abs(projected.x)<1 && Math.abs(projected.y)<1, `${station.name}: plan fits after resize to ${width}/${height}`);
+      }
+      assert.equal(world.inspection.kind,'plan');
+      assert.equal(train.position.z,2160);
     }
   }
   world.dispose();
