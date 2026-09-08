@@ -179,6 +179,53 @@ test('reflected saloon light stays inside the moving consist and is disabled out
   interior.dispose();assert.equal(light.parent.parent,null,'disposing the controller detaches its lights');
 });
 
+test('cab lights do not shine through either saloon partition and repeated setup retains the same diffuser brightness', () => {
+  const camera=new THREE.PerspectiveCamera();
+  let interior=createTrainInterior(train,camera,null,manifest);
+  for(const index of [1,7]) {
+    interior.select(index,'saloon');interior.update(0,true);
+    assert.ok(interior.lights.filter(l=>l.userData.cab).every(l=>!l.visible),'passenger compartment excludes the cab source');
+    interior.select(index,'operator');interior.update(100,true);
+    assert.deepEqual(interior.lights.filter(l=>l.userData.cab && l.visible).map(l=>l.userData.carIndex),[index]);
+    interior.update(0,false,manifest.train.interior.cars[index-1].center,false);
+    assert.ok(interior.lights.some(l=>l.userData.cab && l.visible),'exterior views retain the visible cab fixture');
+  }
+  let diffuser;train.traverse(o=>{if(o.material?.name==='CAF interior opal light diffusers')diffuser=o.material;});
+  const intensity=diffuser.emissiveIntensity;
+  interior.dispose();interior=createTrainInterior(train,camera,null,manifest);
+  assert.equal(diffuser.emissiveIntensity,intensity,'shared materials must not get dimmer on every controller setup');
+  interior.dispose();
+});
+
+test('saloon shadows use bounded fixed fixture positions, follow the consist and restore exterior rendering', () => {
+  const camera=new THREE.PerspectiveCamera(),renderer={shadowMap:{type:THREE.PCFSoftShadowMap}};
+  const interior=createTrainInterior(train,camera,renderer,manifest);
+  for(const index of [1,4,7]) {
+    interior.select(index,'saloon');interior.update(0,true);train.updateMatrixWorld(true);
+    const active=interior.shadowLights.filter(l=>l.visible);
+    assert.equal(active.length,4,'bounded shadow map pool');
+    assert.equal(renderer.shadowMap.type,THREE.PCFShadowMap,'interior filtering supports a soft radius');
+    for(const light of active) {
+      assert.equal(light.userData.carIndex,index);
+      assert.ok(light.castShadow && light.shadow.radius>1);
+      const ray=new THREE.Raycaster(light.position.clone(),new THREE.Vector3(0,1,0),0,.025);
+      assert.match(ray.intersectObject(train,true)[0]?.object.material.name||'',/opal light diffusers/,'shadow source remains immediately below an actual lens');
+    }
+    const positions=active.map(l=>l.position.toArray());
+    interior.move(6.62);interior.update(0,true);
+    assert.deepEqual(active.map(l=>l.position.toArray()),positions,'looking or walking slightly must not drag shadow origins');
+    const before=active[0].getWorldPosition(new THREE.Vector3());
+    train.position.z=140;interior.update(140,true);train.updateMatrixWorld(true);
+    assert.ok(Math.abs(active[0].getWorldPosition(new THREE.Vector3()).z-before.z-140)<1e-5);
+    train.position.z=0;train.updateMatrixWorld(true);
+  }
+  interior.update(0,false,camera.position.z,false);
+  assert.ok(interior.shadowLights.every(l=>!l.visible),'local shadow maps stop in exterior views');
+  assert.equal(renderer.shadowMap.type,THREE.PCFSoftShadowMap,'exterior filter restored');
+  assert.ok(interior.lights.every(l=>l.intensity===l.userData.baseIntensity),'area lamp balance restored outside the shadowed saloon');
+  interior.dispose();
+});
+
 test('both operator cabs have a clear eye line, solid floor and correctly sized native HMI', () => {
   train.updateMatrixWorld(true);
   for (const car of manifest.train.interior.cars.filter(c=>c.cabEyeLocal)) {

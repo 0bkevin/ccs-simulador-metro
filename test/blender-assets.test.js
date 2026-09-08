@@ -128,6 +128,24 @@ test("fixture selection stays at the authored position, separates levels and nev
   lighting.dispose();
 });
 
+test('saloon enclosure reduces external fill and leaving it restores the station lighting', () => {
+  const scene=new THREE.Scene(),lighting=createBlenderLighting(scene,null,manifest);
+  const target=new Vector3(.22,2.57,-1.1);
+  lighting.focus(target,'Station Caño Amarillo');
+  const environment=scene.environmentIntensity;
+  const before=lighting.fixtureLights.map(l=>({intensity:l.intensity,position:l.position.toArray()}));
+  lighting.focus(target,'Station Caño Amarillo',false,false,true);
+  assert.ok(scene.environmentIntensity<environment,'enclosed saloon has restrained environmental fill');
+  for(const [i,light] of lighting.fixtureLights.entries()) {
+    assert.deepEqual(light.position.toArray(),before[i].position,'attenuation does not invent or move fixtures');
+    if(before[i].intensity>0)assert.ok(light.intensity>0 && light.intensity<before[i].intensity);
+  }
+  lighting.focus(target,'Station Caño Amarillo');
+  assert.equal(scene.environmentIntensity,environment);
+  assert.deepEqual(lighting.fixtureLights.map(l=>l.intensity),before.map(l=>l.intensity));
+  lighting.dispose();
+});
+
 test("exported fixture sources sit directly below or in front of their modeled fittings", async () => {
   const environment = (await load('environment')).scene;
   environment.updateMatrixWorld(true);

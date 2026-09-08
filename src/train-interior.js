@@ -1,19 +1,38 @@
 import * as THREE from "three";
 import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
+import { createSaloonShadows, SALOON_SHADOW_SHARE } from './train-saloon-shadows.js';
+
+// Blender radiant watts are not WebGL luminance. Calibrate the saloon for
+// the web renderer without changing its native Cycles lighting or lamp tint.
+const SALOON_LIGHT_GAIN = .30;
+const SALOON_DIFFUSER_GAIN = .55;
+const SALOON_BOUNCE_FRACTION = .14;
+const nativeEmissions = new WeakMap();
 
 /** Native passenger saloon camera and lights. No replacement web geometry. */
 export function createTrainInterior(train, camera, renderer, manifest) {
   const cars = manifest.train.interior?.cars || [];
+  train.traverse(object => {
+    for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+      if (material?.name !== 'CAF interior opal light diffusers') continue;
+      if (!nativeEmissions.has(material)) nativeEmissions.set(material,material.emissiveIntensity);
+      material.emissiveIntensity = nativeEmissions.get(material) * SALOON_DIFFUSER_GAIN;
+    }
+  });
   const lightGroup = new THREE.Group();
   lightGroup.name = "Blender passenger lighting";
   train.add(lightGroup);
   RectAreaLightUniformsLib.init();
   const lights = (manifest.lighting?.trainAreaLights || []).map(data => {
-    const light = new THREE.RectAreaLight(new THREE.Color().fromArray(data.color), data.power / (data.width * data.height), data.width, data.height);
+    const saloon = data.family === 'saloon opal strip';
+    const light = new THREE.RectAreaLight(new THREE.Color().fromArray(data.color), data.power * (saloon ? SALOON_LIGHT_GAIN : 1) / (data.width * data.height), data.width, data.height);
     light.name = data.name;
     light.position.fromArray(data.position);
     light.quaternion.fromArray(data.quaternion);
     light.userData.carIndex = Number(data.collection.slice(-2));
+    light.userData.cab = data.name.startsWith('CAF cab ');
+    light.userData.saloon = saloon;
+    light.userData.baseIntensity = light.intensity;
     light.visible = false;
     lightGroup.add(light);
     return light;
@@ -26,7 +45,7 @@ export function createTrainInterior(train, camera, renderer, manifest) {
       data.family === 'saloon opal strip' && Number(data.collection.slice(-2)) === car.index);
     if (strips.length !== 2) return [];
     const length = Math.min(...strips.map(data => data.height));
-    const bounce = new THREE.RectAreaLight(0xf0f2ed, strips.reduce((power,data) => power + data.power,0) * .24 / (2.1 * length), 2.1, length);
+    const bounce = new THREE.RectAreaLight(0xf0f2ed, strips.reduce((power,data) => power + data.power,0) * SALOON_LIGHT_GAIN * SALOON_BOUNCE_FRACTION / (2.1 * length), 2.1, length);
     bounce.name = `Saloon ${car.index} reflected ceiling light`;
     bounce.position.set(0,car.floorY + .055,(strips[0].position[2]+strips[1].position[2])/2);
     bounce.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1),new THREE.Vector3(0,1,0));
@@ -34,6 +53,8 @@ export function createTrainInterior(train, camera, renderer, manifest) {
     bounce.visible = false; lightGroup.add(bounce);
     return [bounce];
   });
+  const shadows = createSaloonShadows(train,lightGroup,renderer,manifest,SALOON_LIGHT_GAIN);
+  const shadowViewDirection = new THREE.Vector3();
   let carIndex = 1, view = "saloon", enabled = false, revision = 0, dragging = null;
   let yaw = 0, pitch = 0, travel = 6.63;
   const anchor = new THREE.Vector3(.22, 2.57, 0);
@@ -64,7 +85,17 @@ export function createTrainInterior(train, camera, renderer, manifest) {
     // Interior and adjacent-car illumination follows the consist. Platform
     // views light just the nearest car; interior views include its neighbours.
     const near = enabled ? carIndex : cars.reduce((best, c) => Math.abs(distance + c.center - viewingZ) < Math.abs(distance + (cars[best - 1]?.center || 0) - viewingZ) ? c.index : best, 1);
-    for (const light of lights) light.visible = train.visible && Math.abs(light.userData.carIndex - near) <= (interiorView ? 1 : 0);
+    const nearCar = cars[near-1];
+    const localZ = ((enabled ? camera.position.z : viewingZ) - distance - (nearCar?.center || 0)) * (nearCar?.direction || 1);
+    const inCab = Boolean(nearCar?.cabEyeLocal) && localZ > 8.1;
+    const shadowFocus = (enabled ? camera.position.z : viewingZ)-distance + camera.getWorldDirection(shadowViewDirection).z*3;
+    const shadowedSaloon = shadows.update(near,shadowFocus,train.visible && interiorView && !inCab);
+    // RectAreaLight has no shadows: exclude the cab source while viewing the
+    // passenger compartment so it cannot shine through the opaque partition.
+    for (const light of lights) {
+      light.visible = train.visible && Math.abs(light.userData.carIndex - near) <= (interiorView ? 1 : 0) && (!light.userData.cab || !interiorView || (inCab && light.userData.carIndex === near));
+      light.intensity = light.userData.baseIntensity * (shadowedSaloon && light.userData.saloon && light.userData.carIndex === near ? 1-SALOON_SHADOW_SHARE : 1);
+    }
     for (const light of bounceLights) light.visible = train.visible && interiorView && Math.abs(light.userData.carIndex - near) <= 1;
   }
   function move(value) {
@@ -88,9 +119,9 @@ export function createTrainInterior(train, camera, renderer, manifest) {
   element?.addEventListener("pointermove", drag);
   element?.addEventListener("pointerup", up);
   element?.addEventListener("pointercancel", up);
-  return { select, update, move, cars, lights, bounceLights,
+  return { select, update, move, cars, lights, bounceLights, shadowLights: shadows.lights,
     get revision() { return revision; },
     get state() { return { carIndex, view, travel, enabled }; },
-    dispose() { lightGroup.removeFromParent(); element?.removeEventListener("pointerdown", down); element?.removeEventListener("pointermove", drag); element?.removeEventListener("pointerup", up); element?.removeEventListener("pointercancel", up); },
+    dispose() { shadows.dispose();lightGroup.removeFromParent(); element?.removeEventListener("pointerdown", down); element?.removeEventListener("pointermove", drag); element?.removeEventListener("pointerup", up); element?.removeEventListener("pointercancel", up); },
   };
 }

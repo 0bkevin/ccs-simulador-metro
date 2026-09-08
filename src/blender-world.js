@@ -133,7 +133,8 @@ export function createWorld(THREE, renderer, stations = [], assets) {
       const target = activeCamera().position.clone();
       const litStation = stations.find(stop => target.z >= stop.distance - 145 && target.z <= stop.distance + 5);
       const tunnelIndex = Math.max(0, stations.findLastIndex(stop => target.z > stop.distance + 5));
-      lighting.focus(target, litStation?.collection || `Tunnel ${stations[tunnelIndex].id}`);
+      const saloon = cameraMode === 'interior' && !['operator','cab-seat'].includes(interior.state.view);
+      lighting.focus(target, litStation?.collection || `Tunnel ${stations[tunnelIndex].id}`, false, false, saloon);
     }
   }
   function resize(width, height) {

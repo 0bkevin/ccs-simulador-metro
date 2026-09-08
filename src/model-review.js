@@ -66,6 +66,9 @@ function frame(view) {
   camera.fov = inside ? 72 : view === "front" ? 20 : view === "coupler" ? 38 : 42;
   scene.environmentIntensity=inside?.20:.72;ambient.intensity=inside?.25:1.55;
   key.intensity=inside?.65:2.2;fill.intensity=inside?.15:1.1;
+  if (inside && !['operator','cab-seat'].includes(view)) {
+    scene.environmentIntensity*=.5;ambient.intensity*=.4;key.intensity*=.4;fill.intensity*=.4;
+  }
   camera.updateProjectionMatrix();
   if (inside && car) {
     const at=(x,y,u)=>new THREE.Vector3(x*car.direction,y,car.center+car.direction*u);
@@ -118,7 +121,7 @@ loadBlenderAssets({ includeEnvironment: false }).then((assets) => { const { trai
   const leadCar = assets.manifest.train.interior.cars[0];
   frontDoorZ = leadCar.center + leadCar.direction * (assets.manifest.train.doors.centresLocalMetres?.['CAF car 01']?.at(-1) ?? 7);
   doors = createTrainDoors(train); doors.update(0, doorState);
-  interior=createTrainInterior(train,camera,null,assets.manifest);
+  interior=createTrainInterior(train,camera,renderer,assets.manifest);
   cabInstruments=createTrainCab(train);
   openButton.disabled = closeButton.disabled = sideSelect.disabled = false;
   window.__metroReview = { train, scene, camera, controls, renderer, doors, doorState, interior, cabInstruments, frame, bounds: null, manifest: assets.manifest, assetSource: assets.source };
